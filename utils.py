@@ -158,13 +158,13 @@ def clean_process_adult_data(data, sens_att, protected_att='gender', threshold_t
 def get_hierarchies_adult(data):
     """Generate/read hierarchies for quasi-identifiers based on provided data."""
     return {
-                "age": dict(pd.read_csv("hierarchies/age.csv", header=None)),
-                "native-country": dict(pd.read_csv("hierarchies/country.csv", header=None)),
-                "education": dict(pd.read_csv("hierarchies/education.csv", header=None)),
-                "marital-status": dict(pd.read_csv("hierarchies/marital.csv", header=None)),
-                "occupation": dict(pd.read_csv("hierarchies/occupation.csv", header=None)),
-                "race": dict(pd.read_csv("hierarchies/race.csv", header=None)),
-                "workclass": dict(pd.read_csv("hierarchies/workclass.csv", header=None)),
+                "age": dict(pd.read_csv("hierarchies/adult/age.csv", header=None)),
+                "native-country": dict(pd.read_csv("hierarchies/adult/country.csv", header=None)),
+                "education": dict(pd.read_csv("hierarchies/adult/education.csv", header=None)),
+                "marital-status": dict(pd.read_csv("hierarchies/adult/marital.csv", header=None)),
+                "occupation": dict(pd.read_csv("hierarchies/adult/occupation.csv", header=None)),
+                "race": dict(pd.read_csv("hierarchies/adult/race.csv", header=None)),
+                "workclass": dict(pd.read_csv("hierarchies/adult/workclass.csv", header=None)),
                 "hours-per-week": {0: pd.Series(range(data["hours-per-week"].max()+1)),
                                 1: generate_intervals(range(data["hours-per-week"].max()+1), 0, 100, 5),
                                 2: generate_intervals(range(data["hours-per-week"].max()+1), 0, 100, 25),
