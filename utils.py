@@ -133,31 +133,49 @@ def write_results_to_csv(values, header=False):
         if not header: # Write the actual values
             scores_writer.writerow(values)
 
-def clean_process_adult_data(data, sens_att, protected_att='gender', threshold_target=50000):
-    """Clean and preprocess the adult dataset."""
+def clean_process_data(data, dataset, sens_att, protected_att, threshold_target=None):
+    """Clean and preprocess the dataset."""
     
-    data.columns = data.columns.str.strip()
-    data.drop(columns=['capital-gain', 'capital-loss', 'education-num'], inplace=True)
-    cat_cols = [ "workclass", "education", "marital-status", "occupation", "relationship",  "gender", "native-country", "race"]
-    for col in cat_cols:
-        data[col] = data[col].str.strip()
+    if dataset == 'adult':
+        data.columns = data.columns.str.strip()
+        data.drop(columns=['capital-gain', 'capital-loss', 'education-num'], inplace=True)
+        cat_cols = [ "workclass", "education", "marital-status", "occupation", "relationship",  "gender", "native-country", "race"]
+        for col in cat_cols:
+            data[col] = data[col].str.strip()
 
-    # drop nans
-    data = data.replace({'native-country': {'?': np.nan}, 'workclass': {'?': np.nan}, 'occupation': {'?': np.nan}})
-    data.dropna(inplace=True)
-    data.reset_index(drop=True, inplace=True)
+        # drop nans
+        data = data.replace({'native-country': {'?': np.nan}, 'workclass': {'?': np.nan}, 'occupation': {'?': np.nan}})
+        data.dropna(inplace=True)
+        data.reset_index(drop=True, inplace=True)
 
-    # Transform protected and target attributes
-    data[sens_att] = data[sens_att].apply(lambda x: int(x>threshold_target))
-    if protected_att == 'gender':
-        data[protected_att] = data[protected_att].apply(lambda x: 1 if x == 'Male' else 0)
-    elif protected_att == 'race':
-        data[protected_att] = data[protected_att].apply(lambda x: 1 if x == 'White' else 0)
+        # Transform protected and target attributes
+        data[sens_att] = data[sens_att].apply(lambda x: int(x>threshold_target))
+        if protected_att == 'gender':
+            data[protected_att] = data[protected_att].apply(lambda x: 1 if x == 'Male' else 0)
+        elif protected_att == 'race':
+            data[protected_att] = data[protected_att].apply(lambda x: 1 if x == 'White' else 0)
+
+    elif dataset == 'bank':
+        data.columns = data.columns.str.strip()
+        cat_cols = [ "job", "marital", "education", "default", "housing",  "loan", "contact", "month", "poutcome"]
+        for col in cat_cols:
+            data[col] = data[col].str.strip()
+
+        # Transform protected and target attributes
+        data[sens_att] = data[sens_att].apply(lambda x: int(x=='yes'))
+        if protected_att == 'age':
+            data[protected_att] = data[protected_att].apply(lambda x: 1 if 25 <= x <= 60 else 0)
+        elif protected_att == 'race':
+            data[protected_att] = data[protected_att].apply(lambda x: 1 if x == 'married' else 0)
+
+            data.reset_index(drop=True, inplace=True)   
     return data
 
-def get_hierarchies_adult(data):
+def get_hierarchies(data, dataset):
     """Generate/read hierarchies for quasi-identifiers based on provided data."""
-    return {
+
+    if dataset == 'adult':
+        return {
                 "age": dict(pd.read_csv("hierarchies/adult/age.csv", header=None)),
                 "native-country": dict(pd.read_csv("hierarchies/adult/country.csv", header=None)),
                 "education": dict(pd.read_csv("hierarchies/adult/education.csv", header=None)),
@@ -174,7 +192,106 @@ def get_hierarchies_adult(data):
                                 1: np.array(["*"] * len(data["relationship"].unique()))},
                 "gender": {0: data["gender"].unique(),
                         1: np.array(["*"] * len(data["gender"].unique()))}  
-            }
+                }
+    
+    elif dataset == 'bank':
+        return {
+                "job": {
+                    0: data["job"].unique(),
+                    1: data["job"].replace({
+                        "admin.": "White Collar", "technician": "White Collar", "management": "White Collar", 
+                        "services": "Blue Collar","self-employed": "Blue Collar", "entrepreneur": "Blue Collar", "housemaid": "Blue Collar", "blue-collar": "Blue Collar", 
+                        "unknown": "Other", "unemployed": "Other", "student": "Other", "retired": "Other"
+                    }),
+                    2: data["job"].replace({
+                        "admin.": "Employed", "technician": "Employed", "services": "Employed", "management": "Employed", "blue-collar": "Employed", "self-employed": "Employed", "entrepreneur": "Employed", "housemaid": "Employed",
+                        "retired": "Unemployed","unemployed": "Unemployed", "student": "Unemployed", "unknown": "Unemployed"
+                    }),
+                    3: np.array(["*"] * len(data["job"].unique()))
+                },
+                "marital": {
+                    0: data["marital"].unique(),
+                    1: np.array(["*"] * len(data["marital"].unique()))
+                },
+                "education": {
+                    0: data["education"].unique(),
+                    1: np.array(["*"] * len(data["education"].unique()))
+                },
+                "default": {
+                    0: data["default"].unique(),
+                    1: np.array(["*"] * len(data["default"].unique()))
+                },
+                "housing": {
+                    0: data["housing"].unique(),
+                    1: np.array(["*"] * len(data["housing"].unique()))
+                },
+                "loan": {
+                    0: data["loan"].unique(),
+                    1: np.array(["*"] * len(data["loan"].unique()))
+                },
+                "contact": {
+                    0: data["contact"].unique(),
+                    1: np.array(["*"] * len(data["contact"].unique()))
+                },
+                "month": {
+                    0: data["month"].unique(),
+                    1: data["month"].replace({
+                        "jan": "Quarter 1", "feb": "Quarter 1", "mar": "Quarter 1",
+                        "apr": "Quarter 2", "may": "Quarter 2", "jun": "Quarter 2",
+                        "jul": "Quarter 3", "aug": "Quarter 3", "sep": "Quarter 3",
+                        "oct": "Quarter 4", "nov": "Quarter 4", "dec": "Quarter 4"
+                    }),
+                    2: data["month"].replace({
+                        "jan": "First Half", "feb": "First Half", "mar": "First Half", "apr": "First Half",
+                        "may": "First Half", "jun": "First Half", "jul": "Second Half", "aug": "Second Half",
+                        "sep": "Second Half", "oct": "Second Half", "nov": "Second Half", "dec": "Second Half"
+                    }),
+                    3: np.array(["*"] * len(data["month"].unique()))
+                },
+                "poutcome": {
+                    0: data["poutcome"].unique(),
+                    1: np.array(["*"] * len(data["poutcome"].unique()))
+                },
+                "balance": {
+                    0: data["balance"].unique(),
+                    1: pd.cut(data["balance"], bins=[-float("inf"), 500, 5000, float("inf")]).astype(str),
+                    2: pd.cut(data["balance"], bins=[-float("inf"), 500, 1000, 5000, float("inf")]).astype(str),
+                    3: np.array(["*"] * len(data["balance"].unique()))
+                },
+                "day": {
+                    0: data["day"].unique(),
+                    1: pd.cut(data["day"], bins=[0, 10, 20, 31]).astype(str),
+                    2: pd.cut(data["day"], bins=[0, 7, 14, 21, 31]).astype(str),
+                    3: np.array(["*"] * len(data["day"].unique()))
+                },
+                "duration": {
+                    0: data["duration"].unique(),
+                    1: pd.cut(data["duration"], bins=[-float("inf"), 100, 300, float("inf")]).astype(str),
+                    2: pd.cut(data["duration"], bins=range(0, data["duration"].max(), 60)).astype(str),
+                    3: pd.cut(data["duration"], bins=range(0, data["duration"].max(), 120)).astype(str),
+                    4: np.array(["*"] * len(data["duration"].unique()))
+                },
+                "campaign": {
+                    0: data["campaign"].unique(),
+                    1: pd.cut(data["campaign"], bins=range(0, data["campaign"].max(), 2)).astype(str),
+                    2: pd.cut(data["campaign"], bins=range(0, data["campaign"].max(), 4)).astype(str),
+                    3: pd.cut(data["campaign"], bins=[-float("inf"), 3, 5, float("inf")]).astype(str),
+                    4: np.array(["*"] * len(data["campaign"].unique()))
+                },
+                "pdays": {
+                    0: data["pdays"].unique(),
+                    1: pd.cut(data["pdays"], bins=range(-2, data["pdays"].max(), 5)).astype(str),
+                    2: pd.cut(data["pdays"], bins=range(-2, data["pdays"].max(), 25)).astype(str),
+                    3: pd.cut(data["pdays"], bins=range(-2, data["pdays"].max(), 50)).astype(str),
+                    4: np.array(["*"] * len(data["pdays"].unique()))
+                },
+                "previous": {
+                    0: data["previous"].unique(),
+                    1: pd.cut(data["previous"], bins=range(-1, data["previous"].max(), 5)).astype(str),
+                    2: pd.cut(data["previous"], bins=range(-1, data["previous"].max(), 10)).astype(str),
+                    3: pd.cut(data["previous"], bins=range(-1, data["previous"].max(), 15)).astype(str),
+                    4: np.array(["*"] * len(data["previous"].unique()))},
+                }
 
 def get_generalization_levels(train_data_anon, quasi_ident, hierarchies):
     """Get the generalization levels of the training set to apply the same to the test set."""
@@ -216,11 +333,11 @@ def get_train_test_data(train_data_anon, test_data, sens_att):
     return X_train, y_train, X_test, y_test
 
 def generate_intervals(
-    quasi_ident: typing.Union[typing.List, np.ndarray],
-    inf: typing.Union[int, float],
-    sup: typing.Union[int, float],
-    step: int,
-) -> pd.Series:
+                        quasi_ident: typing.Union[typing.List, np.ndarray],
+                        inf: typing.Union[int, float],
+                        sup: typing.Union[int, float],
+                        step: int,
+                    ) -> pd.Series:
     """
     Fixing the function to generate intervals as hierarchies from <https://github.com/IFCA-Advanced-Computing/anjana/blob/main/anjana/anonymity/utils/utils.py>.
     Generate intervals as hierarchies.
