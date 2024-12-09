@@ -18,63 +18,61 @@ WAOB = {
 
 
 COW = {
-    "b": 0,
-    "1": 1,
-    "2": 1,
-    "3": 1,
-    "4": 1,
-    "5": 1,
-    "6": 1,
-    "7": 1,
-    "8": 1,
-    "9": 0,
+    1.0: 1.0,
+    2.0: 1.0,
+    3.0: 1.0,
+    4.0: 1.0,
+    5.0: 1.0,
+    6.0: 1.0,
+    7.0: 1.0,
+    8.0: 1.0,
+    9.0: 0.0,
 }
 
 SCHL = {
-    "bb": 0,
-    "01": 0,
-    "02": 0,
-    "03": 0,
-    "04": 0,
-    "05": 0,
-    "06": 0,
-    "07": 0,
-    "08": 0,
-    "09": 0,
-    "10": 0,
-    "11": 0,
-    "12": 0,
-    "13": 0,
-    "14": 0,
-    "15": 0,
-    "16": 0,
-    "17": 0,
-    "18": 0,
-    "19": 0,
-    "20": 1,
-    "21": 1,
-    "22": 1,
-    "23": 1,
-    "24": 1,
+    1.0: 0,
+    2.0: 0,
+    3.0: 0,
+    4.0: 0,
+    5.0: 0,
+    6.0: 0,
+    7.0: 0,
+    8.0: 0,
+    9.0: 0,
+    10.0: 0,
+    11.0: 0,
+    12.0: 0,
+    13.0: 0,
+    14.0: 0,
+    15.0: 0,
+    16.0: 0,
+    17.0: 0,
+    18.0: 0,
+    19.0: 0,
+    20.0: 1,
+    21.0: 1,
+    22.0: 1,
+    23.0: 1,
+    24.0: 1,
 }
 
 MAR = {
-    1: 1,  # Married
-    2: 0,  # Widowed
-    3: 0,  # Divorced
-    4: 0,  # Separated
-    5: 0,  # Never married or under 15 years old
+    1: 1.0,  # Married
+    2: 0.0,  # Widowed
+    3: 0.0,  # Divorced
+    4: 0.0,  # Separated
+    5: 0.0,  # Never married or under 15 years old
 }
 
 
 RAC1P = {
-    1: 1,  # White
-    2: 0,  # Black or African American
-    3: 0,  # American Indian or Alaska Native
-    4: 0,  # Chinese
-    5: 0,  # Japanese
-    6: 0,  # Other Asian or Pacific Islander
-    7: 0,  # Other race, including multiracial
+    1.0: 1.0,  # White
+    2.0: 0.0,  # Black or African American
+    3.0: 0.0,  # American Indian or Alaska Native
+    4.0: 0.0,  # Chinese
+    5.0: 0.0,  # Japanese
+    6.0: 0.0,  # Other Asian or Pacific Islander
+    7.0: 0.0,  # Other race, including multiracial
 }
 wk_max = 99 
 WKHP = {
@@ -181,55 +179,55 @@ def map_occp_to_group_int(occp_code):
     
     # Define the mapping according to the given ranges
     if 10 <= occp_code_int <= 420:
-        return 1
+        return 1.0
     elif 500 <= occp_code_int <= 730:
-        return 2
+        return 2.0
     elif 800 <= occp_code_int <= 950:
-        return 3
+        return 3.0
     elif 1000 <= occp_code_int <= 1240:
-        return 4
+        return 4.0
     elif 1300 <= occp_code_int <= 1560:
-        return 5
+        return 5.0
     elif 1600 <= occp_code_int <= 1965:
-        return 6
+        return 6.0
     elif 2000 <= occp_code_int <= 2060:
-        return 7
+        return 7.0
     elif 2100 <= occp_code_int <= 2150: 
-        return 8
+        return 8.0
     elif 2200 <= occp_code_int <= 2550:
-        return 9
+        return 9.0
     elif 2600 <= occp_code_int <=2920:
-        return 10
+        return 10.0
     elif 3000 <= occp_code_int <= 3550 : 
-        return 11
+        return 11.0
     elif 3600 <= occp_code_int <= 3650:
-        return 12
+        return 12.0
     elif 3700 <= occp_code_int <= 3960:
-        return 13
+        return 13.0
     elif 4000 <= occp_code_int <= 4160:
-        return 14
+        return 14.0
     elif 4200 <= occp_code_int <= 4255:
-        return 15
+        return 15.0
     elif 4300 <= occp_code_int <= 4655:
-        return 16
+        return 16.0
     elif 4700 <= occp_code_int <= 4965:
-        return 17
+        return 17.0
     elif 5000 <= occp_code_int <= 5940 : 
-        return 18
+        return 18.0
     elif 6000 <= occp_code_int <= 6130 : 
-        return 19
+        return 19.0
     elif 6200 <= occp_code_int <= 6930 : 
-        return 20
+        return 20.0
     elif 7000 <= occp_code_int <= 7610 :
-        return 21
+        return 21.0
     elif 7700 <= occp_code_int <= 8990 :
-        return 22
+        return 22.0
     elif 9000 <= occp_code_int <= 9760 :
-        return 23
+        return 23.0
     elif 9800 <= occp_code_int <= 9830 :
-        return 24
+        return 24.0
     else:
-        return 0  # For codes outside the defined ranges
+        return 0.0  # For codes outside the defined ranges
 
 
 
@@ -282,25 +280,25 @@ def map_pobp_to_region_int(pobp_code):
     """
     # Define the mapping according to the ranges
     if 1 <= pobp_code <= 50:
-        return 1
+        return 1.0
     elif 51 <= pobp_code <= 56:
-        return 2
+        return 2.0
     elif 60 <= pobp_code <= 100:
-        return 3
+        return 3.0
     elif 101 <= pobp_code <= 200:
-        return 4
+        return 4.0
     elif 201 <= pobp_code <= 300:
-        return 5
+        return 5.0
     elif 301 <= pobp_code <= 400:
-        return 6
+        return 6.0
     elif 401 <= pobp_code <= 500:
-        return 7
+        return 7.0
     elif 501 <= pobp_code <= 600:
-        return 8
+        return 8.0
     elif 601 <= pobp_code <= 700:
-        return 0
+        return 0.0
     else:
-        return 0
+        return 0.0
 
 
 def map_relp_to_category(relp_code):
@@ -376,9 +374,9 @@ relp_vals= features['RELP'].unique()
 
 print("columns in ACSIncome : ", features['OCCP'].unique())
 
-OCCP = {int(code): map_occp_to_group_int(code) for code in sorted(occp_vals)}
-POBP = {int(code): map_pobp_to_region_int(code) for code in sorted(pobp_vals)}
-RELP = {int(code): map_relp_to_category_int(code) for code in sorted(relp_vals)}
+OCCP = {float(code): map_occp_to_group_int(code) for code in sorted(occp_vals)}
+POBP = {float(code): map_pobp_to_region_int(code) for code in sorted(pobp_vals)}
+RELP = {float(code): map_relp_to_category_int(code) for code in sorted(relp_vals)}
 
 
 write_hierachie(OCCP,csv_file="hierarchies/ACSIncome/OCCP.csv")
