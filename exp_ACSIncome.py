@@ -37,7 +37,7 @@ max_seed = cfg.max_seed
 test_size = cfg.test_size
 
 
-
+dataset = "ACSIncome"
 
 #What is the k-anonimity level of the original ACSIncome
 #define protected and sensitive attributes and Quasi-Identifiers
@@ -79,9 +79,7 @@ for method, anon_parameter in dic_methods_parameters.items():
             postprocess=lambda x: np.nan_to_num(x, -1),
         )
         """
-        data_source = ACSDataSource(survey_year='2018', horizon='1-Year', survey='person')
-        acs_data = data_source.get_data(states=["AL"], download=True)
-        features, label, _ = ACSIncome.df_to_pandas(acs_data)
+
 
         states = ['AL']
         # Download and preprocess ACS data
@@ -171,7 +169,7 @@ for method, anon_parameter in dic_methods_parameters.items():
                     dic_metrics = get_metrics(df_fm, protected_att, sens_att)
                     print(f"metrics : {dic_metrics}")
                     print("get_metrics done ")
-                    get_metrics()
+                    write_suppression_results_to_csv([SEED, dataset + "_" + str(threshold_target), protected_att, sens_att, method, anon_parameter, supp_level] + list(dic_metrics.values()))
 
                 except Exception as e:
                     print(f"An error occurred for SEED {SEED}, k {cfg.fixed_k}: {e}")
