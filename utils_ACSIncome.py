@@ -106,7 +106,7 @@ def get_metrics(df_fm, protected_attribute, target):
 def write_suppression_results_to_csv(values, header=False):
     """Write the results to a csv file."""
 
-    file_path = "results/anonymity_impact_fairness_suppression.csv"
+    file_path = "results/ACSIncome_anonymity_impact_fairness_suppression.csv"
     # Check if the file exists and is empty
     file_exists = os.path.isfile(file_path)
     file_empty = os.stat(file_path).st_size == 0 if file_exists else True
