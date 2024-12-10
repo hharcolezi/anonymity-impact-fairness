@@ -135,7 +135,7 @@ for method, anon_parameter in dic_methods_parameters.items():
                     generalization_levels = get_generalization_levels(train_data_anon, quasi_ident, hierarchies)
                     train_data_anon = train_data_anon.dropna()
                     print(train_data_anon)
-                    """
+                    
                     # Apply the same generalization levels to the test data (Except for the protected attribute: for fairness measurements)
                     for col in set(quasi_ident) - {protected_att}:
                         level = generalization_levels.get(col)
@@ -146,21 +146,11 @@ for method, anon_parameter in dic_methods_parameters.items():
                             
                             # Apply the mapping to the test data
                             test_data[col] = test_data[col].map(hierarchy_mapping)
-                    """
-                    #X_train, y_train, X_test, y_test = get_train_test_data(train_data_anon, test_data, sens_att)
                     
-                    y = train_data_anon['PINCP']  # Target variable
-                    x = train_data_anon.drop('PINCP', axis=1)  # Features (drop 'PINCP' target column)
-                    X_train, X_test, y_train, y_test = train_test_split(x, y, test_size=0.25, random_state=SEED)
-                    print(f"X_train before preprocess : \n{X_train}")
-                    X_train, X_test = preprocess_data(X_train, X_test) #Handle the hierarchies 
-                    print(f"X_train after preprocess  : \n{X_train}")
+                    X_train, y_train, X_test, y_test = get_train_test_data(train_data_anon, test_data, sens_att)
                     # Train the model
                     model = XGB(enable_categorical=True, random_state=SEED, n_jobs=-1)
-                    #y_train = y_train.map({0.0 : 0, -1.0 : 1, np.nan : 0.0})
-                   
                     model.fit(X_train, y_train)
-                    #y_pred = model.predict(X_test)
                     test_data = pd.concat([X_test, y_test], axis=1)
                     df_fm = X_test.copy()
                     df_fm[sens_att] = y_test.values
@@ -168,9 +158,8 @@ for method, anon_parameter in dic_methods_parameters.items():
                     df_fm['y_pred'] = y_pred_col
                     dic_metrics = get_metrics(df_fm, protected_att, sens_att)
                     print(f"metrics : {dic_metrics}")
-                    print("get_metrics done ")
-                    write_suppression_results_to_csv([SEED, dataset + "_" + str(threshold_target), protected_att, sens_att, method, anon_parameter, supp_level] + list(dic_metrics.values()))
-
+                    write_suppression_results_to_csv([SEED, dataset + "_" + str(threshold_target), protected_att, sens_att, method, anon_parameter, supp_level] + list(dic_metrics.values()), header=False)
+                    print("Results written in csv file")
                 except Exception as e:
                     print(f"An error occurred for SEED {SEED}, k {cfg.fixed_k}: {e}")
                     continue
