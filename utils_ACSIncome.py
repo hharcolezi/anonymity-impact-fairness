@@ -44,8 +44,8 @@ def get_metrics(df_fm, protected_attribute, target):
                 }
     
     # Filtering datasets for fairness metrics
-    df_a_1 = df_fm.loc[df_fm[protected_attribute] == 1.0]
-    df_a_0 = df_fm.loc[df_fm[protected_attribute] == 2.0]
+    df_a_1 = df_fm.loc[df_fm[protected_attribute] == 0.0]
+    df_a_0 = df_fm.loc[df_fm[protected_attribute] == 1.0]
 
     # Calculate Statistical Parity per group
     SP_a_1 = df_a_1.loc[df_a_1["y_pred"] == 1].shape[0] / df_a_1.shape[0]
