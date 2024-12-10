@@ -1,346 +1,384 @@
-
-import typing
+import csv
 import numpy as np
 import pandas as pd
-from sklearn.metrics import recall_score, accuracy_score, f1_score, precision_score, roc_auc_score, confusion_matrix
-from sklearn.preprocessing import LabelEncoder
-import os
-import csv
+from utils_ACSIncome import generate_intervals
+import folktables
+from folktables import ACSDataSource, ACSEmployment, ACSIncome, ACSHealthInsurance
 
-def get_metrics(df_fm, protected_attribute, target):
+WAOB = {
+    "1": 1,
+    "2": 0,
+    "3": 0,
+    "4": 0,
+    "5": 0,
+    "6": 0,
+    "7": 0,
+    "8": 0,
+}
+
+
+COW = {
+    1.0: 1.0,
+    2.0: 1.0,
+    3.0: 1.0,
+    4.0: 1.0,
+    5.0: 1.0,
+    6.0: 1.0,
+    7.0: 1.0,
+    8.0: 1.0,
+    9.0: 0.0,
+}
+
+SCHL = {
+    1.0: 0,
+    2.0: 0,
+    3.0: 0,
+    4.0: 0,
+    5.0: 0,
+    6.0: 0,
+    7.0: 0,
+    8.0: 0,
+    9.0: 0,
+    10.0: 0,
+    11.0: 0,
+    12.0: 0,
+    13.0: 0,
+    14.0: 0,
+    15.0: 0,
+    16.0: 0,
+    17.0: 0,
+    18.0: 0,
+    19.0: 0,
+    20.0: 1,
+    21.0: 1,
+    22.0: 1,
+    23.0: 1,
+    24.0: 1,
+}
+
+MAR = {
+    1: 1.0,  # Married
+    2: 0.0,  # Widowed
+    3: 0.0,  # Divorced
+    4: 0.0,  # Separated
+    5: 0.0,  # Never married or under 15 years old
+}
+
+
+RAC1P = {
+    1.0: 1.0,  # White
+    2.0: 0.0,  # Black or African American
+    3.0: 0.0,  # American Indian or Alaska Native
+    4.0: 0.0,  # Chinese
+    5.0: 0.0,  # Japanese
+    6.0: 0.0,  # Other Asian or Pacific Islander
+    7.0: 0.0,  # Other race, including multiracial
+}
+wk_max = 99 
+WKHP = {
+    0: pd.Series(range(wk_max + 1)),
+    1: generate_intervals(range(wk_max + 1), 0, 100, 5),
+    2: generate_intervals(range(wk_max + 1), 0, 100, 25),
+    3: generate_intervals(range(wk_max + 1), 0, 100, 50),
+    4: np.array(["*"] * (wk_max + 1)),  # Ensure the size of the array is an integer
+}
+
+def write_hierachie(attr,csv_file) :
     
-    dic_metrics = {# Statistical Parity Difference
-                "SPD": np.nan, 
+    with open(csv_file, mode="w", newline="") as file:
+        writer = csv.writer(file)
+        for status, binary_value in attr.items():
+            writer.writerow([status, binary_value, "*"])
 
-                # Equal Opportunity Difference
-                "EOD": np.nan, 
+    print(f"Hierarchies saved to {csv_file}.")
 
-                # Model Accuracy Difference
-                "MAD": np.nan, 
 
-                # Predictive Equality Disparity
-                "PED": np.nan,
 
-                # Predictive Rate Disparity
-                "PRD": np.nan,
-
-                # Accuracy Score
-                "ACC": np.nan,
-
-                # f1 Score
-                "f1": np.nan, 
-
-                # Precision Score
-                "Precision": np.nan,
-
-                # Recall Score
-                "Recall": np.nan, 
-
-                # ROC AUC Score
-                "ROC_AUC": np.nan,
-
-                # Confusion Matrix
-                "CM": np.nan,
-                }
-    
-    # Filtering datasets for fairness metrics
-    df_a_1 = df_fm.loc[df_fm[protected_attribute] == 1.0]
-    df_a_0 = df_fm.loc[df_fm[protected_attribute] == 2.0]
-
-    # Calculate Statistical Parity per group
-    SP_a_1 = df_a_1.loc[df_a_1["y_pred"] == 1].shape[0] / df_a_1.shape[0]
-    SP_a_0 = df_a_0.loc[df_a_0["y_pred"] == 1].shape[0] / df_a_0.shape[0]
-    
-    # Statistical Parity Difference
-    SPD = SP_a_1 - SP_a_0
-    dic_metrics["SPD"] = SPD
-
-    # Equal Opportunity
-    EO_a_1 = recall_score(df_a_1[target], df_a_1['y_pred'])
-    EO_a_0 = recall_score(df_a_0[target], df_a_0['y_pred'])
-
-    # Equal Opportunity Difference
-    EOD = EO_a_1 - EO_a_0
-    dic_metrics["EOD"] = EOD
-
-    # Mode Accuracy
-    MA_a_1 = accuracy_score(df_a_1[target], df_a_1['y_pred'])
-    MA_a_0 = accuracy_score(df_a_0[target], df_a_0['y_pred'])
-
-    # Model Accuracy Difference
-    MAD = MA_a_1 - MA_a_0
-    dic_metrics["MAD"] = MAD
-
-    # Predictive Equality Disparity (False Positive Rate difference)
-    FPR_a_1 = (df_a_1[(df_a_1["y_pred"] == 1) & (df_a_1[target] == 0)].shape[0]) / (df_a_1[target] == 0).sum()
-    FPR_a_0 = (df_a_0[(df_a_0["y_pred"] == 1) & (df_a_0[target] == 0)].shape[0]) / (df_a_0[target] == 0).sum()
-    PED = FPR_a_1 - FPR_a_0
-    dic_metrics["PED"] = PED
-
-    # Predictive Rate Disparity (Positive Predictive Value difference)
-    PPV_a_1 = precision_score(df_a_1[target], df_a_1['y_pred'])
-    PPV_a_0 = precision_score(df_a_0[target], df_a_0['y_pred'])
-    PRD = PPV_a_1 - PPV_a_0
-    dic_metrics["PRD"] = PRD
-
-    # Accuracy Score
-    dic_metrics["ACC"] = accuracy_score(df_fm[target], df_fm['y_pred'])
-    
-    # f1 Score
-    dic_metrics["f1"] = f1_score(df_fm[target], df_fm['y_pred'])
-
-    # Precision Score
-    dic_metrics["Precision"] = precision_score(df_fm[target], df_fm['y_pred'])
-
-    # Recall Score
-    dic_metrics["Recall"] = recall_score(df_fm[target], df_fm['y_pred'])
-
-    # ROC AUC Score
-    dic_metrics["ROC_AUC"] = roc_auc_score(df_fm[target], df_fm['y_pred'])
-
-    # Confusion Matrix
-    dic_metrics["CM"] = confusion_matrix(df_fm[target], df_fm['y_pred'])
-    
-    return dic_metrics
-
-def write_suppression_results_to_csv(values, header=False):
-    """Write the results to a csv file."""
-
-    file_path = "results/ACSIncome_anonymity_impact_fairness_suppression.csv"
-    # Check if the file exists and is empty
-    file_exists = os.path.isfile(file_path)
-    file_empty = os.stat(file_path).st_size == 0 if file_exists else True
-
-    with open(file_path, mode='a', newline='') as scores_file:
-        scores_writer = csv.writer(scores_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-        if header and file_empty:# Write header if specified and file is empty
-            scores_writer.writerow(["SEED", "dataset", "protected_att", "target", "method", "anon_parameter", "supp_level", "SPD", "EOD", "MAD", "PED", "PRD", "ACC", "f1", "Precision", "Recall", "ROC_AUC", "CM"])
-        if not header: # Write the actual values
-            scores_writer.writerow(values)
-
-def write_results_to_csv(values, header=False):
-    """Write the results to a csv file."""
-
-    file_path = "results/anonymity_impact_fairness.csv"
-    # Check if the file exists and is empty
-    file_exists = os.path.isfile(file_path)
-    file_empty = os.stat(file_path).st_size == 0 if file_exists else True
-
-    with open(file_path, mode='a', newline='') as scores_file:
-        scores_writer = csv.writer(scores_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-        if header and file_empty:# Write header if specified and file is empty
-            scores_writer.writerow(["SEED", "dataset", "protected_att", "target", "method", "k_parameter", "anon_parameter", "SPD", "EOD", "MAD", "PED", "PRD", "ACC", "f1", "Precision", "Recall", "ROC_AUC", "CM"])
-        if not header: # Write the actual values
-            scores_writer.writerow(values)
-
-def clean_process_ACS_data(data, sens_att, protected_att='gender', threshold_target=50000):
-    """Clean and preprocess the adult dataset."""
-    
-    data.columns = data.columns.str.strip()
-    data.drop(columns=['capital-gain', 'capital-loss', 'education-num'], inplace=True)
-    cat_cols = [ "workclass", "education", "marital-status", "occupation", "relationship",  "gender", "native-country", "race"]
-    for col in cat_cols:
-        data[col] = data[col].str.strip()
-
-    # drop nans
-    data = data.replace({'native-country': {'?': np.nan}, 'workclass': {'?': np.nan}, 'occupation': {'?': np.nan}})
-    data.dropna(inplace=True)
-    data.reset_index(drop=True, inplace=True)
-
-    # Transform protected and target attributes
-    data[sens_att] = data[sens_att].apply(lambda x: int(x>threshold_target))
-    if protected_att == 'gender':
-        data[protected_att] = data[protected_att].apply(lambda x: 1 if x == 'Male' else 0)
-    elif protected_att == 'race':
-        data[protected_att] = data[protected_att].apply(lambda x: 1 if x == 'White' else 0)
-    return data
-
-def get_hierarchies_ACSIncome(data):
-    """Generate/read hierarchies for quasi-identifiers based on provided data."""
-    """'AGEP', 'COW', 'SCHL', 'MAR', 'OCCP', 'POBP', 'RELP', 'WKHP', 'SEX',
-       'RAC1P'"""
-    return {
-                "AGEP": dict(pd.read_csv("hierarchies/ACSIncome/AGEP.csv", header=None)),
-                "COW" : dict(pd.read_csv("hierarchies/ACSIncome/COW.csv", header=None)),
-                "SCHL": dict(pd.read_csv("hierarchies/ACSIncome/SCHL.csv", header=None)),
-                "MAR" : dict(pd.read_csv("hierarchies/ACSIncome/MAR.csv", header=None)),
-                "OCCP" : dict(pd.read_csv("hierarchies/ACSIncome/OCCP.csv", header=None)),
-                "POBP" : dict(pd.read_csv("hierarchies/ACSIncome/POBP.csv", header=None)),
-                "WAOB" : dict(pd.read_csv("hierarchies/ACSIncome/WAOB.csv", header=None)),
-                "RELP" : dict(pd.read_csv("hierarchies/ACSIncome/RELP.csv", header=None)),
-                "RAC1P": dict(pd.read_csv("hierarchies/ACSIncome/RAC1P.csv", header=None)),
-                "PINCP": dict(pd.read_csv("hierarchies/ACSIncome/PINCP.csv", header=None)),
-                "WKHP": {0: pd.Series(range(int(data["WKHP"].max()) + 1)),  # Get the max value and convert to int
-                         1: generate_intervals(range(int(data["WKHP"].max()) + 1), 0, 100, 5),
-                         2: generate_intervals(range(int(data["WKHP"].max()) + 1), 0, 100, 25),
-                         3: generate_intervals(range(int(data["WKHP"].max()) + 1), 0, 100, 50),
-                         4: np.array(["*"] * (int(data["WKHP"].max()) + 1))  # Convert max value to int
-                         },
-                #"RELP": {0: data["RELP"].unique(),
-                #                1: np.array(["*"] * len(data["RELP"].unique()))},
-                "SEX": {1.0: data["SEX"].unique(),
-                        2.0: np.array(["*"] * len(data["SEX"].unique()))}  
-            }
-
-def get_generalization_levels(train_data_anon, quasi_ident, hierarchies):
-    """Get the generalization levels of the training set to apply the same to the test set."""
-
-    generalization_levels = {
-        col: next(
-            (
-                level
-                for level, values in hierarchies[col].items()
-                if set(train_data_anon[col].unique()).issubset(
-                    set(v for v in values if not pd.isna(v))  # Filter out NaN values
-                )
-            ),
-            None,
-        )
-        for col in quasi_ident
-    }
-
-    return generalization_levels
-
-def get_train_test_data(train_data_anon, test_data, sens_att):
-    """Get the train and test data for the model training."""
-
-    X_train, y_train = train_data_anon.drop(columns=sens_att), train_data_anon[sens_att]
-    X_test, y_test = test_data.drop(columns=sens_att), test_data[sens_att]
-
-    # Label encode based on concatenated train and test data
-    X_combined = pd.concat([X_train, X_test], axis=0)
-    label_encoders = {}
-    for col in X_combined.columns:
-        le = LabelEncoder()
-        X_combined[col] = le.fit_transform(X_combined[col].astype(str))
-        label_encoders[col] = le
-
-    # Split the encoded combined data back into X_train and X_test
-    X_train = X_combined.iloc[:len(X_train), :].reset_index(drop=True)
-    X_test = X_combined.iloc[len(X_train):, :].reset_index(drop=True)
-
-    return X_train, y_train, X_test, y_test
-
-def generate_intervals(
-    quasi_ident: typing.Union[typing.List, np.ndarray],
-    inf: typing.Union[int, float],
-    sup: typing.Union[int, float],
-    step: int,
-) -> pd.Series:
+def map_occp_to_group(occp_code):
     """
-    Fixing the function to generate intervals as hierarchies from <https://github.com/IFCA-Advanced-Computing/anjana/blob/main/anjana/anonymity/utils/utils.py>.
-    Generate intervals as hierarchies.
-
-    Given a quasi-identifier of numeric type, creates a pandas Series containing
-    interval-based generalizations (hierarchies) for each value of the quasi-identifier.
-    The intervals will have the length specified by the 'step' parameter.
-
-    :param quasi_ident: values of the quasi-identifier to be generalized
-    :type quasi_ident: list or numpy array
-
-    :param inf: lower bound for the set of intervals
-    :type inf: int or float
-
-    :param sup: upper bound for the set of intervals
-    :type sup: int or float
-
-    :param step: size of each interval
-    :type step: int
-
-    :return: pandas Series with the intervals associated with each value in quasi_ident
-    :rtype: pd.Series
-    """
-    # Define interval boundaries from inf to sup
-    values = np.arange(inf, sup + step, step)
-    intervals = []
-
-    # Assign intervals to each value in quasi_ident
-    for num in quasi_ident:
-        # Find the right interval
-        idx = np.searchsorted(values, num, side="right") - 1
-        lower = values[idx]
-        upper = values[idx + 1]
-        intervals.append(f"[{lower}, {upper})")
-
-    return pd.Series(intervals, index=range(len(quasi_ident)))
-
-
-
-def calculate_total_ncp(original_df, generalized_df):
-    """
-    Calculate the total NCP based on the difference between the original and generalized datasets.
- 
-    Parameters:
-    - original_df: The original dataset (DataFrame).
-    - generalized_df: The generalized dataset with 'any' values (DataFrame).
- 
+    Map an OCCP code to its corresponding occupation group based on the specified ranges.
+    
+    Args:
+    occp_code (str): A 4-digit OCCP code (as a string).
+    
     Returns:
-    - Total NCP (float): The total Normalized Certainty Penalty.
+    str: The name of the occupation group.
     """
-    # Step 1: Calculate distinct values for each attribute in the original dataset
-    distinct_counts = original_df.nunique()
- 
-    # Step 2: Initialize variables for total NCP and number of tuples
-    total_ncp = 0
-    num_rows = original_df.shape[0]
-    num_attributes = original_df.shape[1]
- 
-    # Step 3: Go through each tuple in the generalized dataset
-    for idx in range(num_rows):
-        ncp_t = 0
-        for col in generalized_df.columns:
-            # Step 4: If the value is 'any', compute its contribution to NCP
-            if generalized_df.loc[idx, col] == 'any':
-                ncp_t += 1 / distinct_counts[col]
- 
-        # Step 5: Divide NCP for this tuple by the total number of attributes
-        ncp_t /= num_attributes
-        total_ncp += ncp_t
- 
-    # Step 6: Return the average NCP across all tuples
-    #total_ncp /= num_rows
-    return total_ncp
+    occp_code_int = int(occp_code)  # Convert OCCP code to integer for range comparisons
+    
+    # Define the mapping according to the given ranges
+    if 10 <= occp_code_int <= 420:
+        return 'Management, Business, Science, and Arts Occupations'
+    elif 500 <= occp_code_int <= 730:
+        return 'Business Operations Specialists'
+    elif 800 <= occp_code_int <= 950:
+        return 'Financial Specialists'
+    elif 1000 <= occp_code_int <= 1240:
+        return 'Computer and Mathematical Occupations'
+    elif 1300 <= occp_code_int <= 1560:
+        return 'Architecture and Engineering Occupations'
+    elif 1600 <= occp_code_int <= 1965:
+        return 'Life, Physical, and Social Science Occupations'
+    elif 2000 <= occp_code_int <= 2060:
+        return 'Community and Social Services Occupations'
+    elif 2100 <= occp_code_int <= 2150: 
+        return 'Legal Occupations'
+    elif 2200 <= occp_code_int <= 2550:
+        return 'Education, Training, and Library Occupations' 
+    elif 2600 <= occp_code_int <=2920:
+        return 'Arts, Design, Entertainment, Sports, and Media Occupations'
+    elif 3000 <= occp_code_int <= 3550 : 
+        return 'Healthcare Practitioners and Technical Occupations'
+    elif 3600 <= occp_code_int <= 3650:
+        return 'Healthcare Support Occupations'
+    elif 3700 <= occp_code_int <= 3960:
+        return 'Protective Service Occupations'
+    elif 4000 <= occp_code_int <= 4160:
+        return 'Food Preparation and Serving Occupations'
+    elif 4200 <= occp_code_int <= 4255:
+        return 'Building and Grounds Cleaning and Maintenance Occupations'
+    elif 4300 <= occp_code_int <= 4655:
+        return 'Personal Care and Service Occupations'
+    elif 4700 <= occp_code_int <= 4965:
+        return 'Sales and Related Occupations'
+    elif 5000 <= occp_code_int <= 5940 : 
+        return 'Office and Administrative Support Occupations'
+    elif 6000 <= occp_code_int <= 6130 : 
+        return 'Farming, Fishing, and Forestry Occupations'
+    elif 6200 <= occp_code_int <= 6930 : 
+        return 'Extraction Workers'
+    elif 7000 <= occp_code_int <= 7610 :
+        return 'Installation, Maintenance, and Repair Workers'
+    elif 7700 <= occp_code_int <= 8990 :
+        return 'Production Occupations'
+    elif 9000 <= occp_code_int <= 9760 :
+        return 'Transportation and Material Moving Occupations'
+    elif 9800 <= occp_code_int <= 9830 :
+        return 'Military Specific Occupations'
+    else:
+        return 'Unemployed'  # For codes outside the defined ranges
 
 
-def preprocess_data(train_data_anon, test_data):
-    """Preprocess the data by handling interval strings and applying label encoding."""
-    
-    # Concatenate train and test data to handle encoding together
-    X_combined = pd.concat([train_data_anon, test_data], axis=0)
 
-    label_encoders = {}
-    
-    # Process interval columns (those that are in string format like '[25, 50)')
-    for col in X_combined.columns:
-        if X_combined[col].dtype == 'object':  # Check if the column is of string type
-            if any(isinstance(i, str) and i.startswith('[') for i in X_combined[col]):  # Check if it's an interval
-                X_combined[col] = X_combined[col].apply(process_interval_string)  # Replace with midpoint
-            else:
-                # If it's categorical but not an interval, apply label encoding
-                le = LabelEncoder()
-                X_combined[col] = le.fit_transform(X_combined[col].astype(str))
-                label_encoders[col] = le
-    
-    # Split the combined data back into train and test
-    X_train = X_combined.iloc[:len(train_data_anon), :].reset_index(drop=True)
-    X_test = X_combined.iloc[len(train_data_anon):, :].reset_index(drop=True)
 
-    return X_train, X_test
 
-def process_interval_string(interval_str):
-    """Process interval string like '[25, 50)' and return a numeric value (midpoint)."""
-    interval_str = interval_str.strip('[]')  # Remove brackets
-    start, end = interval_str.split(',')  # Split by comma
+
+
+
+def map_occp_to_group_int(occp_code):
+    """
+    Map an OCCP code to its corresponding occupation group based on the specified ranges.
     
-    # Clean up any whitespace or parentheses in the strings
-    start = start.strip()  # Remove spaces
-    end = end.strip(')')  # Remove the closing parenthesis
+    Args:
+    occp_code (str): A 4-digit OCCP code (as a string).
     
-    try:
-        # Convert to integers
-        start, end = int(start), int(end)
-    except ValueError as e:
-        print(f"Error processing interval: {interval_str}")
-        raise e
+    Returns:
+    str: The name of the occupation group.
+    """
+    occp_code_int = int(occp_code)  # Convert OCCP code to integer for range comparisons
     
-    return (start + end) / 2  # Return midpoint of the interval
+    # Define the mapping according to the given ranges
+    if 10 <= occp_code_int <= 420:
+        return 1.0
+    elif 500 <= occp_code_int <= 730:
+        return 2.0
+    elif 800 <= occp_code_int <= 950:
+        return 3.0
+    elif 1000 <= occp_code_int <= 1240:
+        return 4.0
+    elif 1300 <= occp_code_int <= 1560:
+        return 5.0
+    elif 1600 <= occp_code_int <= 1965:
+        return 6.0
+    elif 2000 <= occp_code_int <= 2060:
+        return 7.0
+    elif 2100 <= occp_code_int <= 2150: 
+        return 8.0
+    elif 2200 <= occp_code_int <= 2550:
+        return 9.0
+    elif 2600 <= occp_code_int <=2920:
+        return 10.0
+    elif 3000 <= occp_code_int <= 3550 : 
+        return 11.0
+    elif 3600 <= occp_code_int <= 3650:
+        return 12.0
+    elif 3700 <= occp_code_int <= 3960:
+        return 13.0
+    elif 4000 <= occp_code_int <= 4160:
+        return 14.0
+    elif 4200 <= occp_code_int <= 4255:
+        return 15.0
+    elif 4300 <= occp_code_int <= 4655:
+        return 16.0
+    elif 4700 <= occp_code_int <= 4965:
+        return 17.0
+    elif 5000 <= occp_code_int <= 5940 : 
+        return 18.0
+    elif 6000 <= occp_code_int <= 6130 : 
+        return 19.0
+    elif 6200 <= occp_code_int <= 6930 : 
+        return 20.0
+    elif 7000 <= occp_code_int <= 7610 :
+        return 21.0
+    elif 7700 <= occp_code_int <= 8990 :
+        return 22.0
+    elif 9000 <= occp_code_int <= 9760 :
+        return 23.0
+    elif 9800 <= occp_code_int <= 9830 :
+        return 24.0
+    else:
+        return 0.0  # For codes outside the defined ranges
+
+
+
+
+
+
+def map_pobp_to_region(pobp_code):
+    """
+    Map a POBP code to its corresponding region based on specified ranges.
+    
+    Args:
+    pobp_code (int): A numeric POBP code.
+    
+    Returns:
+    str: The name of the region or category.
+    """
+    # Define the mapping according to the ranges
+    if 1 <= pobp_code <= 50:
+        return 'United States (by State)'
+    elif 51 <= pobp_code <= 56:
+        return 'U.S. Territories'
+    elif 60 <= pobp_code <= 100:
+        return 'North America (Outside U.S.)'
+    elif 101 <= pobp_code <= 200:
+        return 'Central and South America'
+    elif 201 <= pobp_code <= 300:
+        return 'Europe'
+    elif 301 <= pobp_code <= 400:
+        return 'Asia'
+    elif 401 <= pobp_code <= 500:
+        return 'Africa'
+    elif 501 <= pobp_code <= 600:
+        return 'Oceania'
+    elif 601 <= pobp_code <= 700:
+        return 'Other/Unknown'
+    else:
+        return 'Invalid or Unspecified Code'
+
+
+
+def map_pobp_to_region_int(pobp_code):
+    """
+    Map a POBP code to its corresponding region based on specified ranges.
+    
+    Args:
+    pobp_code (int): A numeric POBP code.
+    
+    Returns:
+    str: The name of the region or category.
+    """
+    # Define the mapping according to the ranges
+    if 1 <= pobp_code <= 50:
+        return 1.0
+    elif 51 <= pobp_code <= 56:
+        return 2.0
+    elif 60 <= pobp_code <= 100:
+        return 3.0
+    elif 101 <= pobp_code <= 200:
+        return 4.0
+    elif 201 <= pobp_code <= 300:
+        return 5.0
+    elif 301 <= pobp_code <= 400:
+        return 6.0
+    elif 401 <= pobp_code <= 500:
+        return 7.0
+    elif 501 <= pobp_code <= 600:
+        return 8.0
+    elif 601 <= pobp_code <= 700:
+        return 0.0
+    else:
+        return 0.0
+
+
+def map_relp_to_category(relp_code):
+    """
+    Map RELP codes to broader relationship categories.
+    
+    Args:
+    relp_code (int): RELP code (0–17).
+    
+    Returns:
+    str: The category of the relationship.
+    """
+    # Define the categorization based on relationship types
+    if relp_code == 0:
+        return 'Reference Person'
+    elif relp_code in [1, 2, 3, 4]:
+        return 'Immediate Family'
+    elif relp_code in [5, 6, 7, 8, 9, 10]:
+        return 'Extended Family'
+    elif relp_code in [11, 12, 13, 14, 15]:
+        return 'Non-Family Household Members'
+    elif relp_code == 16:
+        return 'Institutionalized Group Quarters'
+    elif relp_code == 17:
+        return 'Noninstitutionalized Group Quarters'
+    else:
+        return 'Unknown Relationship'
+    
+
+def map_relp_to_category_int(relp_code):
+    """
+    Map RELP codes to broader relationship categories.
+    
+    Args:
+    relp_code (int): RELP code (0–17).
+    
+    Returns:
+    str: The category of the relationship.
+    """
+    # Define the categorization based on relationship types
+    if relp_code == 0:
+        return 0
+    elif relp_code in [1, 2, 3, 4]:
+        return 1
+    elif relp_code in [5, 6, 7, 8, 9, 10]:
+        return 2
+    elif relp_code in [11, 12, 13, 14, 15]:
+        return 3
+    elif relp_code == 16:
+        return 4
+    elif relp_code == 17:
+        return 5
+    else:
+        return 0
+
+
+
+write_hierachie(COW,csv_file="hierarchies/ACSIncome/COW.csv")
+write_hierachie(SCHL,csv_file="hierarchies/ACSIncome/SCHL.csv")
+write_hierachie(MAR,csv_file="hierarchies/ACSIncome/MAR.csv")
+write_hierachie(RAC1P,csv_file="hierarchies/ACSIncome/RAC1P.csv")
+write_hierachie(WKHP,csv_file="hierarchies/ACSIncome/WKHP.csv")
+write_hierachie(WAOB,csv_file="hierarchies/ACSIncome/WAOB.csv")
+
+
+
+data_source = ACSDataSource(survey_year='2018', horizon='5-Year', survey='person')
+acs_data = data_source.get_data(states=["AL"], download=True)
+features, label, _ = ACSIncome.df_to_pandas(acs_data)
+occp_vals= features['OCCP'].unique()
+pobp_vals= features['POBP'].unique()
+relp_vals= features['RELP'].unique()
+
+print("columns in ACSIncome : ", features['OCCP'].unique())
+
+OCCP = {float(code): map_occp_to_group_int(code) for code in sorted(occp_vals)}
+POBP = {float(code): map_pobp_to_region_int(code) for code in sorted(pobp_vals)}
+RELP = {float(code): map_relp_to_category_int(code) for code in sorted(relp_vals)}
+
+
+write_hierachie(OCCP,csv_file="hierarchies/ACSIncome/OCCP.csv")
+write_hierachie(POBP,csv_file="hierarchies/ACSIncome/POBP.csv")
+write_hierachie(RELP,csv_file="hierarchies/ACSIncome/RELP.csv")
