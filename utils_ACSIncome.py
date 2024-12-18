@@ -7,6 +7,11 @@ from sklearn.preprocessing import LabelEncoder
 import os
 import csv
 
+
+
+
+
+
 def get_metrics(df_fm, protected_attribute, target):
     
     dic_metrics = {# Statistical Parity Difference
@@ -114,7 +119,7 @@ def write_suppression_results_to_csv(values, state, header=False):
     with open(file_path, mode='a', newline='') as scores_file:
         scores_writer = csv.writer(scores_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
         if header and file_empty:# Write header if specified and file is empty
-            scores_writer.writerow(["SEED", "dataset", "protected_att", "target", "method", "anon_parameter", "supp_level", "SPD", "EOD", "MAD", "PED", "PRD", "ACC", "f1", "Precision", "Recall", "ROC_AUC", "CM"])
+            scores_writer.writerow(["SEED", "dataset", "protected_att", "target", "method", "anon_parameter", "supp_level", "SPD", "EOD", "MAD", "PED", "PRD", "ACC", "f1", "Precision", "Recall", "ROC_AUC", "CM", "INF"])
             scores_writer.writerow(values)
         if not header: # Write the actual values
             scores_writer.writerow(values)
@@ -132,7 +137,7 @@ def write_results_to_csv(values, state, header=False):
     with open(file_path, mode='a', newline='') as scores_file:
         scores_writer = csv.writer(scores_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
         if header and file_empty:# Write header if specified and file is empty
-            scores_writer.writerow(["SEED", "dataset", "protected_att", "target", "method", "k_parameter", "anon_parameter", "SPD", "EOD", "MAD", "PED", "PRD", "ACC", "f1", "Precision", "Recall", "ROC_AUC", "CM"])
+            scores_writer.writerow(["SEED", "dataset", "protected_att", "target", "method", "k_parameter", "anon_parameter", "SPD", "EOD", "MAD", "PED", "PRD", "ACC", "f1", "Precision", "Recall", "ROC_AUC", "CM", "INF"])
             scores_writer.writerow(values)
         if not header: # Write the actual values
             scores_writer.writerow(values)
