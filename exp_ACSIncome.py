@@ -24,14 +24,58 @@ import config_experiments as cfg
 
 #Import folktables dataset
 import folktables
-from folktables import ACSDataSource, ACSEmployment, ACSIncome, ACSHealthInsurance
+from folktables import ACSDataSource, ACSEmployment, ACSIncome, ACSHealthInsurance, ACSPublicCoverage
+from sklearn.metrics.pairwise import cosine_similarity
+
+
+
+def individual_fairness(predictions, features, similarity_metric='euclidean', k=5):
+    """
+    Compute individual fairness for model predictions.
+
+    Parameters:
+        predictions (array-like): Model predictions for individuals.
+        features (array-like): Feature matrix (N x D).
+        similarity_metric (str): Similarity metric ('cosine' or 'euclidean').
+        k (int): Number of nearest neighbors to consider.
+
+    Returns:
+        float: Average individual fairness score (lower is better).
+    """
+    # Compute pairwise similarity matrix
+    if similarity_metric == 'cosine':
+        similarity_matrix = cosine_similarity(features)
+    elif similarity_metric == 'euclidean':
+        similarity_matrix = -np.linalg.norm(features[:, None] - features, axis=2)
+    else:
+        raise ValueError("Unsupported similarity metric!")
+
+    n = len(predictions)
+    fairness_scores = []
+
+    # For each individual, compare with k-nearest neighbors
+    for i in range(n):
+        # Get top k most similar individuals (excluding self)
+        nearest_neighbors = np.argsort(-similarity_matrix[i])[:k + 1][1:]
+        
+        # Calculate prediction differences weighted by similarity
+        for j in nearest_neighbors:
+            fairness_scores.append(
+                abs(predictions[i] - predictions[j]) * similarity_matrix[i, j]
+            )
+
+    # Return the average fairness score
+    return np.mean(fairness_scores)
+
+
+
 
 lst_supp_level = cfg.supp_level
 dic_methods_parameters = {
         'k-anonymity': cfg.fixed_k,
         'l-diversity': cfg.fixed_l,
         't-closeness': cfg.fixed_t
-            }
+        }
 
 max_seed = cfg.max_seed
 test_size = cfg.test_size
@@ -47,7 +91,7 @@ sens_att = 'PINCP'
 #Applying k-anonymity to the new dataset
 
 
-
+state = 'WY'
 
 lst_threshold_target = cfg.adult_threshold_target
 
@@ -57,43 +101,19 @@ for method, anon_parameter in dic_methods_parameters.items():
     # Loop over several threshold targets (same dataset but with different Y distribution)
     for threshold_target in lst_threshold_target:
         print(f"Threshold target: {threshold_target}")
-        """
-        ACSIncomeNew = folktables.BasicProblem(
-            features=[
-                'COW',   #Class of worker ----> OCCP Occupation contains more details
-                'SCHL',  #Educational attainement ----> SCHG Grade level attending  contains less details
-                #'SCHG'
-                'AGEP',
-                'MAR',   #Marital status 
-                'WAOB',  #World area of birth ---> POBP contains more details (per county)
-                #'POBP',
-                'RELP', 
-                'WKHP', #Usual hours worked per week ---> can be binned like age
-                'SEX',  
-                'RAC1P',#RAC1P racial group two more detailed attributes RAC2P, RAC3P
-            ],
-            target='PINCP',
-            target_transform=lambda x: x > threshold_target,    
-            group='SEX',
-            preprocess=folktables.adult_filter,
-            postprocess=lambda x: np.nan_to_num(x, -1),
-        )
-        """
 
-
-        states = ['AL']
+    
         # Download and preprocess ACS data
-        data_source = ACSDataSource(survey_year='2018', horizon='5-Year', survey='person')
-        acs_data = data_source.get_data(states=states, download=True)
+        data_source = ACSDataSource(survey_year='2018', horizon='1-Year', survey='person')
+        acs_data = data_source.get_data(states=[state], download=True)
         features, target, _ = ACSIncome.df_to_pandas(acs_data)
+        for feature in features.columns : 
+            print(feature, features[feature].unique())
         entire_data = pd.concat([features, target.astype(int)], axis=1)
-        #entire_data.fillna(method='ffill', inplace=True)  # Forward fill: replace NaN with the previous value
-        #df.fillna(method='bfill', inplace=True)  # Backward fill: replace NaN with the next value
-
-        #entire_data.dropna()  # Removes rows where at least one element is NaN
-        print(entire_data)
+        entire_data['PINCP'] = (acs_data['PINCP'] > threshold_target).astype(int)
         quasi_ident = list(set(entire_data.columns) - {protected_att} - {sens_att})
         SEED = 0
+        max_seed = 50
         hierarchies = get_hierarchies_ACSIncome(entire_data)
         while SEED < max_seed:
             print(f"SEED: {SEED}")
@@ -157,9 +177,20 @@ for method, anon_parameter in dic_methods_parameters.items():
                     y_pred_col = np.round(model.predict(X_test)).reshape(-1).astype(int)
                     df_fm['y_pred'] = y_pred_col
                     dic_metrics = get_metrics(df_fm, protected_att, sens_att)
+                    
+
+                    fairness_score = individual_fairness(y_pred_col, X_test.values, similarity_metric='euclidean', k=5)
+                    print(f"Individual Fairness Score: {fairness_score}")
+                    dic_metrics['INF'] = np.abs(fairness_score)
                     print(f"metrics : {dic_metrics}")
-                    write_suppression_results_to_csv([SEED, dataset + "_" + str(threshold_target), protected_att, sens_att, method, anon_parameter, supp_level] + list(dic_metrics.values()), header=False)
+
+
+                    write_results_to_csv([SEED, dataset + "_" + str(threshold_target), protected_att, sens_att, method, anon_parameter, supp_level] + list(dic_metrics.values()), state, header=True)
+                    write_suppression_results_to_csv([SEED, dataset + "_" + str(threshold_target), protected_att, sens_att, method, anon_parameter, supp_level] + list(dic_metrics.values()), state, header=True)
                     print("Results written in csv file")
+
+
+
                 except Exception as e:
                     print(f"An error occurred for SEED {SEED}, k {cfg.fixed_k}: {e}")
                     continue
