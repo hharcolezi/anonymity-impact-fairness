@@ -103,10 +103,10 @@ def get_metrics(df_fm, protected_attribute, target):
     
     return dic_metrics
 
-def write_suppression_results_to_csv(values, header=False):
+def write_suppression_results_to_csv(values, state, header=False):
     """Write the results to a csv file."""
 
-    file_path = "results/ACSIncome_anonymity_impact_fairness_suppression.csv"
+    file_path = f"results/per_state/ACSIncome_{state}_suppression_impact_fairness_suppression.csv"
     # Check if the file exists and is empty
     file_exists = os.path.isfile(file_path)
     file_empty = os.stat(file_path).st_size == 0 if file_exists else True
@@ -115,13 +115,16 @@ def write_suppression_results_to_csv(values, header=False):
         scores_writer = csv.writer(scores_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
         if header and file_empty:# Write header if specified and file is empty
             scores_writer.writerow(["SEED", "dataset", "protected_att", "target", "method", "anon_parameter", "supp_level", "SPD", "EOD", "MAD", "PED", "PRD", "ACC", "f1", "Precision", "Recall", "ROC_AUC", "CM"])
+            scores_writer.writerow(values)
         if not header: # Write the actual values
             scores_writer.writerow(values)
+        if header and not file_empty : 
+            scores_writer.writerow(values)
 
-def write_results_to_csv(values, header=False):
+def write_results_to_csv(values, state, header=False):
     """Write the results to a csv file."""
 
-    file_path = "results/anonymity_impact_fairness.csv"
+    file_path = f"results/per_state/ACSIncome_{state}_anonymity_impact_fairness_suppression.csv"
     # Check if the file exists and is empty
     file_exists = os.path.isfile(file_path)
     file_empty = os.stat(file_path).st_size == 0 if file_exists else True
@@ -130,7 +133,10 @@ def write_results_to_csv(values, header=False):
         scores_writer = csv.writer(scores_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
         if header and file_empty:# Write header if specified and file is empty
             scores_writer.writerow(["SEED", "dataset", "protected_att", "target", "method", "k_parameter", "anon_parameter", "SPD", "EOD", "MAD", "PED", "PRD", "ACC", "f1", "Precision", "Recall", "ROC_AUC", "CM"])
+            scores_writer.writerow(values)
         if not header: # Write the actual values
+            scores_writer.writerow(values)
+        if header and not file_empty : 
             scores_writer.writerow(values)
 
 def clean_process_ACS_data(data, sens_att, protected_att='gender', threshold_target=50000):
