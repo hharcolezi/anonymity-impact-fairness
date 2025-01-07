@@ -100,7 +100,7 @@ features, target, _ = ACSIncome.df_to_pandas(acs_data)
 data = pd.concat([features, target.astype(int)], axis=1)
 
 #Personalize the decision thresholds
-lst_threshold_target = [int(acs_data['PINCP'].median()), int(acs_data['PINCP'].median()), acs_data['PINCP'].quantile(0.10)]
+lst_threshold_target = [int(acs_data['PINCP'].quantile(0.25)), int(acs_data['PINCP'].median()), acs_data['PINCP'].quantile(0.75)]
 
 # Main execution (create the file and write the headers)
 write_results_to_csv([], state, model_type, header=True)
