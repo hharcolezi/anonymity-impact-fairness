@@ -73,10 +73,11 @@ def individual_fairness(predictions, features, similarity_metric='euclidean', k=
 
 
 
-
 # Define the parameters
 dataset = 'ACSIncome'
 methods = ['k-anonymity', 'l-diversity', 't-closeness']
+model_types = ['XGBoost', 'DNN'] #Supported model types
+model_type = model_types[0]
 
 method = methods[0]
 
@@ -90,24 +91,23 @@ lst_k = cfg.lst_k
 max_seed = cfg.max_seed
 max_seed = 50
 test_size = cfg.test_size
-if dataset == 'ACSIncome':
-    lst_threshold_target = cfg.adult_threshold_target
 
-state = 'AL'
+state = 'NV'
+# read data (and potentially download)
+data_source = ACSDataSource(survey_year='2018', horizon='1-Year', survey='person')
+acs_data = data_source.get_data(states=[state], download=True)
+features, target, _ = ACSIncome.df_to_pandas(acs_data)
+data = pd.concat([features, target.astype(int)], axis=1)
+
+#Personalize the decision thresholds
+lst_threshold_target = [int(acs_data['PINCP'].median()), int(acs_data['PINCP'].median()), acs_data['PINCP'].quantile(0.10)]
 
 # Main execution (create the file and write the headers)
-write_results_to_csv([], state, header=True)
+write_results_to_csv([], state, model_type, header=True)
 # Loop over several threshold targets (same dataset but with different Y distribution)
 for threshold_target in lst_threshold_target:
     print(f"Threshold target: {threshold_target}")
-
-    # read data (and potentially download)
-    data_source = ACSDataSource(survey_year='2018', horizon='1-Year', survey='person')
-    acs_data = data_source.get_data(states=[state], download=True)
-    features, target, _ = ACSIncome.df_to_pandas(acs_data)
-
-    data = pd.concat([features, target.astype(int)], axis=1)
-    #edit the target (label) to match the needed threshold
+    #Setup the new target
     data['PINCP'] = (acs_data['PINCP'] > threshold_target).astype(int)
     protected_att = 'SEX'
     sens_att = 'PINCP'  #target
@@ -127,10 +127,12 @@ for threshold_target in lst_threshold_target:
                 train_data, test_data = train_test_split(data, test_size=test_size, random_state=SEED)
                 anon_parameter = k
                 # Anonymize the training data
-                train_data_anon = k_anonymity(train_data, [], quasi_ident, k, supp_level, hierarchies)
+                if k > 1 :
+                    train_data_anon = k_anonymity(train_data, [], quasi_ident, k, supp_level, hierarchies)
+                elif k == 1 : 
+                    train_data_anon = train_data.copy()
                 if 'index' in train_data_anon.columns:
                     del train_data_anon['index'] 
-                print(train_data_anon)
                 # Assert that the level of k-anonymity is at least k
                 actual_k_anonymity = pycanon.anonymity.k_anonymity(train_data_anon, quasi_ident)
                 print(f"achieved level of k_anonymity : {actual_k_anonymity}")
@@ -171,9 +173,15 @@ for threshold_target in lst_threshold_target:
                             test_data[col] = test_data[col].map(hierarchy_mapping)
 
                 X_train, y_train, X_test, y_test = get_train_test_data(train_data_anon, test_data, sens_att)
-                # Train the model
-                model = XGB(enable_categorical=True, random_state=SEED, n_jobs=-1)
-                model.fit(X_train, y_train)
+                #Train a model (XGBoost or DNN)
+                if model_type == 'XGBoost' : 
+                    model = XGB(enable_categorical=True, random_state=SEED, n_jobs=-1)
+                    model.fit(X_train, y_train)
+                    
+                elif model_type == 'DNN' : 
+                    model = folktables_DNN((X_train.shape[1],), init_distrib='lecun_uniform')
+                    model.fit(X_train, y_train, epochs=75, verbose=0)
+                    print('Achieved test accuracy : ', model.evaluate(X_test, y_test, verbose=0)[1])
                 test_data = pd.concat([X_test, y_test], axis=1)
                 df_fm = X_test.copy()
                 df_fm[sens_att] = y_test.values
@@ -188,13 +196,13 @@ for threshold_target in lst_threshold_target:
                 print(f"metrics : {dic_metrics}")
 
                 # Write results to csv
-                write_results_to_csv([SEED, dataset + "_" + str(threshold_target), protected_att, sens_att, method, k, anon_parameter] + list(dic_metrics.values()), state, header=False)
+                write_results_to_csv([SEED, dataset + "_" + str(threshold_target), protected_att, sens_att, method, k, anon_parameter] + list(dic_metrics.values()), state, model_type, header=False)
                 print('results written')
             except Exception as e:
                     print(f"An error occurred for SEED {SEED}, k {k}: {e}")
                     continue
         
         SEED += 1
-        method = methods[SEED%3]
+        method = methods[SEED%3] #Apply the next method
         print('-------------------------------------------------------------\n')
     print('=============================================================\n')
