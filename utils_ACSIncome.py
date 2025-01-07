@@ -1,4 +1,3 @@
-
 import typing
 import numpy as np
 import pandas as pd
@@ -7,9 +6,25 @@ from sklearn.preprocessing import LabelEncoder
 import os
 import csv
 
+import tensorflow as tf
+from tensorflow import keras
+from keras.models import Sequential
+from tensorflow.keras.layers import Input, Dense
 
 
-
+def folktables_DNN(input_shape, init_distrib):
+    model = Sequential([
+        Input(shape=input_shape),  # Specify the input shape here
+        Dense(64, activation='relu', bias_initializer=init_distrib, kernel_initializer=init_distrib),
+        Dense(32, activation='relu', bias_initializer=init_distrib, kernel_initializer=init_distrib),
+        Dense(16, activation='relu', bias_initializer=init_distrib, kernel_initializer=init_distrib),
+        Dense(1, activation='sigmoid', bias_initializer=init_distrib, kernel_initializer=init_distrib)  # Binary classification
+    ])
+    metrics = [
+        tf.keras.metrics.BinaryAccuracy(name='accuracy')
+    ]
+    model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=0.0001), loss='binary_crossentropy', metrics=metrics)
+    return model
 
 
 def get_metrics(df_fm, protected_attribute, target):
@@ -108,10 +123,10 @@ def get_metrics(df_fm, protected_attribute, target):
     
     return dic_metrics
 
-def write_suppression_results_to_csv(values, state, header=False):
+def write_suppression_results_to_csv(values, state, model_type, header=False):
     """Write the results to a csv file."""
 
-    file_path = f"results/per_state/ACSIncome_{state}_suppression_impact_fairness_suppression.csv"
+    file_path = f"results/per_state/ACSIncome_{state}_{model_type}_suppression_impact_fairness_suppression.csv"
     # Check if the file exists and is empty
     file_exists = os.path.isfile(file_path)
     file_empty = os.stat(file_path).st_size == 0 if file_exists else True
@@ -126,10 +141,10 @@ def write_suppression_results_to_csv(values, state, header=False):
         if header and not file_empty : 
             scores_writer.writerow(values)
 
-def write_results_to_csv(values, state, header=False):
+def write_results_to_csv(values, state, model_type, header=False):
     """Write the results to a csv file."""
 
-    file_path = f"results/per_state/ACSIncome_{state}_anonymity_impact_fairness_suppression.csv"
+    file_path = f"results/per_state/ACSIncome_{state}_{model_type}_anonymity_impact_fairness_suppression.csv"
     # Check if the file exists and is empty
     file_exists = os.path.isfile(file_path)
     file_empty = os.stat(file_path).st_size == 0 if file_exists else True
@@ -140,6 +155,7 @@ def write_results_to_csv(values, state, header=False):
             scores_writer.writerow(["SEED", "dataset", "protected_att", "target", "method", "k_parameter", "anon_parameter", "SPD", "EOD", "MAD", "PED", "PRD", "ACC", "f1", "Precision", "Recall", "ROC_AUC", "CM", "INF"])
             scores_writer.writerow(values)
         if not header: # Write the actual values
+            print('writing the results')
             scores_writer.writerow(values)
         if header and not file_empty : 
             scores_writer.writerow(values)
