@@ -10,7 +10,7 @@ from sklearn.model_selection import train_test_split
 
 # anonymity library
 import pycanon
-from anjana.anonymity import k_anonymity
+from anjana.anonymity import k_anonymity, l_diversity, t_closeness
 
 # ML models
 from xgboost import XGBClassifier as XGB
@@ -27,13 +27,6 @@ from utils_ACSIncome import *
 # our data-specific functions
 from utils import clean_process_adult_data, get_hierarchies_adult
 import config_experiments as cfg
-
-
-
-
-
-
-
 
 
 
@@ -83,57 +76,84 @@ def individual_fairness(predictions, features, similarity_metric='euclidean', k=
 
 # Define the parameters
 dataset = 'ACSIncome'
-method = 'k-anonymity'
+methods = ['k-anonymity', 'l-diversity', 't-closeness']
 
+method = methods[0]
+
+t_params = [0.45, 0.5, 0.55]
+l_params = [2]
+count_l = 0
+count_t = 0
 # Get parameters from config file
 supp_level = cfg.supp_level[1]
 lst_k = cfg.lst_k
 max_seed = cfg.max_seed
+max_seed = 50
 test_size = cfg.test_size
 if dataset == 'ACSIncome':
     lst_threshold_target = cfg.adult_threshold_target
 
-state = 'WY'
-# Main execution
+state = 'AL'
+
+# Main execution (create the file and write the headers)
 write_results_to_csv([], state, header=True)
 # Loop over several threshold targets (same dataset but with different Y distribution)
 for threshold_target in lst_threshold_target:
     print(f"Threshold target: {threshold_target}")
 
-    # read data
+    # read data (and potentially download)
     data_source = ACSDataSource(survey_year='2018', horizon='1-Year', survey='person')
     acs_data = data_source.get_data(states=[state], download=True)
     features, target, _ = ACSIncome.df_to_pandas(acs_data)
-    
+
     data = pd.concat([features, target.astype(int)], axis=1)
+    #edit the target (label) to match the needed threshold
     data['PINCP'] = (acs_data['PINCP'] > threshold_target).astype(int)
     protected_att = 'SEX'
     sens_att = 'PINCP'  #target
-    # Define the quasi-identifiers and the sensitive/protected attribute
+    # Define the quasi-identifiers and the sensitive and protected attribute
     quasi_ident = list(set(data.columns) - {protected_att} - {sens_att})
     hierarchies = get_hierarchies_ACSIncome(data)
     # Loop over several seeds
     SEED = 0
     while SEED < max_seed:
-        print(f"SEED: {SEED}")
+        print(f"SEED: {SEED}")  
 
         # Loop over several k values
         for k in lst_k:
             print(f"k: {k}")
-
             try:
                 # Split into train and test data
                 train_data, test_data = train_test_split(data, test_size=test_size, random_state=SEED)
-                
-                # Anonymize data
+                anon_parameter = k
+                # Anonymize the training data
                 train_data_anon = k_anonymity(train_data, [], quasi_ident, k, supp_level, hierarchies)
                 if 'index' in train_data_anon.columns:
                     del train_data_anon['index'] 
-
+                print(train_data_anon)
                 # Assert that the level of k-anonymity is at least k
                 actual_k_anonymity = pycanon.anonymity.k_anonymity(train_data_anon, quasi_ident)
                 print(f"achieved level of k_anonymity : {actual_k_anonymity}")
                 assert actual_k_anonymity >= k, f"k-anonymity constraint not met: Expected >= {k}, but got {actual_k_anonymity}"
+
+                if method == 'l-diversity':
+                    # Apply l-diversity
+                    anon_parameter = 2
+                    train_data_anon = l_diversity(train_data_anon, [], quasi_ident, sens_att, cfg.fixed_k, anon_parameter, supp_level, hierarchies)
+                    # Assert that the level of l-diversity is exactly met
+                    actual_l_diversity = pycanon.anonymity.l_diversity(train_data_anon, quasi_ident, [sens_att])
+                    assert actual_l_diversity == anon_parameter, f"l-diversity constraint not met: Expected == {anon_parameter}, but got {actual_l_diversity}"
+                    print(f"achieved level of l_diversity {actual_l_diversity}")
+                
+                if method == 't-closeness':
+                    # Apply t-closeness
+                    anon_parameter = t_params[count_t % len(t_params)]
+                    train_data_anon = t_closeness(train_data_anon, [], quasi_ident, sens_att, cfg.fixed_k, anon_parameter, supp_level, hierarchies)
+                    # Assert that the level of t-closeness is satisfied
+                    actual_t_closeness = pycanon.anonymity.t_closeness(train_data_anon, quasi_ident, [sens_att], True)
+                    assert actual_t_closeness <= anon_parameter, f"t-closeness constraint not met: Expected <= {anon_parameter}, but got {actual_t_closeness:.2f}"
+                    count_l+=1  #move to the next target value
+                    print(f"achieved level of t_closeness : {actual_t_closeness}")
 
                 if k > 1:
                     # Get generalization levels of the training set to apply the same to the test set
@@ -168,12 +188,13 @@ for threshold_target in lst_threshold_target:
                 print(f"metrics : {dic_metrics}")
 
                 # Write results to csv
-                write_results_to_csv([SEED, dataset + "_" + str(threshold_target), protected_att, sens_att, method, k, k] + list(dic_metrics.values()), state, header=False)
-
+                write_results_to_csv([SEED, dataset + "_" + str(threshold_target), protected_att, sens_att, method, k, anon_parameter] + list(dic_metrics.values()), state, header=False)
+                print('results written')
             except Exception as e:
                     print(f"An error occurred for SEED {SEED}, k {k}: {e}")
                     continue
         
         SEED += 1
+        method = methods[SEED%3]
         print('-------------------------------------------------------------\n')
     print('=============================================================\n')
