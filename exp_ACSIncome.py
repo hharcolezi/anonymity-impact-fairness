@@ -93,7 +93,19 @@ sens_att = 'PINCP'
 
 state = 'WY'
 
-lst_threshold_target = cfg.adult_threshold_target
+
+
+
+    
+# Download and preprocess ACS data
+data_source = ACSDataSource(survey_year='2018', horizon='1-Year', survey='person')
+acs_data = data_source.get_data(states=[state], download=True)
+features, target, _ = ACSIncome.df_to_pandas(acs_data)
+entire_data = pd.concat([features, target.astype(int)], axis=1)
+
+
+#Personalize the decision thresholds
+lst_threshold_target = [int(acs_data['PINCP'].median()), int(acs_data['PINCP'].median()), acs_data['PINCP'].quantile(0.10)]
 
 for method, anon_parameter in dic_methods_parameters.items():
     print(f"Method: {method}, Parameter: {anon_parameter}") 
@@ -102,14 +114,7 @@ for method, anon_parameter in dic_methods_parameters.items():
     for threshold_target in lst_threshold_target:
         print(f"Threshold target: {threshold_target}")
 
-    
-        # Download and preprocess ACS data
-        data_source = ACSDataSource(survey_year='2018', horizon='1-Year', survey='person')
-        acs_data = data_source.get_data(states=[state], download=True)
-        features, target, _ = ACSIncome.df_to_pandas(acs_data)
-        for feature in features.columns : 
-            print(feature, features[feature].unique())
-        entire_data = pd.concat([features, target.astype(int)], axis=1)
+        # Setup the new target
         entire_data['PINCP'] = (acs_data['PINCP'] > threshold_target).astype(int)
         quasi_ident = list(set(entire_data.columns) - {protected_att} - {sens_att})
         SEED = 0
@@ -154,7 +159,7 @@ for method, anon_parameter in dic_methods_parameters.items():
                     # Get generalization levels of the training set to apply the same to the test set
                     generalization_levels = get_generalization_levels(train_data_anon, quasi_ident, hierarchies)
                     train_data_anon = train_data_anon.dropna()
-                    print(train_data_anon)
+                    
                     
                     # Apply the same generalization levels to the test data (Except for the protected attribute: for fairness measurements)
                     for col in set(quasi_ident) - {protected_att}:
@@ -185,7 +190,7 @@ for method, anon_parameter in dic_methods_parameters.items():
                     print(f"metrics : {dic_metrics}")
 
 
-                    write_results_to_csv([SEED, dataset + "_" + str(threshold_target), protected_att, sens_att, method, anon_parameter, supp_level] + list(dic_metrics.values()), state, header=True)
+                    #write_results_to_csv([SEED, dataset + "_" + str(threshold_target), protected_att, sens_att, method, anon_parameter, supp_level] + list(dic_metrics.values()), state, header=True)
                     write_suppression_results_to_csv([SEED, dataset + "_" + str(threshold_target), protected_att, sens_att, method, anon_parameter, supp_level] + list(dic_metrics.values()), state, header=True)
                     print("Results written in csv file")
 
