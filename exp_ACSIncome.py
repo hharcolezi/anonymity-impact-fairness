@@ -105,7 +105,7 @@ entire_data = pd.concat([features, target.astype(int)], axis=1)
 
 
 #Personalize the decision thresholds
-lst_threshold_target = [int(acs_data['PINCP'].median()), int(acs_data['PINCP'].median()), acs_data['PINCP'].quantile(0.10)]
+lst_threshold_target = [int(acs_data['PINCP'].quantile(0.25)), int(acs_data['PINCP'].median()), acs_data['PINCP'].quantile(0.75)]
 
 for method, anon_parameter in dic_methods_parameters.items():
     print(f"Method: {method}, Parameter: {anon_parameter}") 
