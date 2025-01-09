@@ -7,7 +7,7 @@ warnings.filterwarnings("ignore", message="A NumPy version >=")
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
-
+from scipy.stats import entropy
 # anonymity library
 import pycanon
 from anjana.anonymity import k_anonymity, l_diversity, t_closeness
@@ -30,6 +30,46 @@ import config_experiments as cfg
 
 
 
+def estimate_lipschitz_constant(predictions, features, similarity_metric='euclidean'):
+    """
+    Estimate the Lipschitz constant for a classifier based on predictions and feature similarities.
+
+    Parameters:
+        predictions (array-like): Model predictions for individuals (N x 1).
+        features (array-like): Feature matrix (N x D).
+        similarity_metric (str): Similarity metric ('cosine' or 'euclidean').
+
+    Returns:
+        float: Estimated Lipschitz constant (larger values indicate higher violation of individual fairness).
+    """
+    # Compute pairwise similarity matrix
+    if similarity_metric == 'cosine':
+        similarity_matrix = cosine_similarity(features)
+    elif similarity_metric == 'euclidean':
+        similarity_matrix = np.linalg.norm(features[:, None] - features, axis=2)
+    else:
+        raise ValueError("Unsupported similarity metric!")
+
+    n = len(predictions)
+    lipschitz_ratios = []
+
+    # Iterate over each pair of individuals to compute the Lipschitz ratio
+    for i in range(n):
+        for j in range(i + 1, n):  # Avoid redundant calculations (i < j)
+            # Calculate the distance between the feature vectors
+            distance = similarity_matrix[i, j]
+            #print(distance)
+            if distance == 0:  # Skip pairs with identical features (no change in prediction)
+                continue
+
+            # Calculate the absolute difference in predictions
+            prediction_difference = entropy(predictions[i],predictions[j]) #KL-Divergence
+            # Estimate the Lipschitz ratio for the pair
+            lipschitz_ratio = prediction_difference / distance
+            lipschitz_ratios.append(lipschitz_ratio)
+
+    # Return the maximum Lipschitz ratio as the estimated Lipschitz constant
+    return np.max(lipschitz_ratios) if lipschitz_ratios else 0.0
 
 
 def individual_fairness(predictions, features, similarity_metric='euclidean', k=5):
@@ -89,26 +129,76 @@ count_t = 0
 supp_level = cfg.supp_level[1]
 lst_k = cfg.lst_k
 max_seed = cfg.max_seed
-max_seed = 50
+max_seed = 20
 test_size = cfg.test_size
 
-state = 'NV'
+state = 'ALL'
+fraction = 0.10
+
 # read data (and potentially download)
 data_source = ACSDataSource(survey_year='2018', horizon='1-Year', survey='person')
-acs_data = data_source.get_data(states=[state], download=True)
-features, target, _ = ACSIncome.df_to_pandas(acs_data)
-data = pd.concat([features, target.astype(int)], axis=1)
+if state != 'ALL' : 
+    acs_data = data_source.get_data(states=[state], download=True)
+    features, target, _ = ACSIncome.df_to_pandas(acs_data)
+elif state == 'ALL' : 
+    all_states = [
+    'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA',
+    'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD',
+    'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ',
+    'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC',
+    'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY'
+    ]
+    all_features = []
+    all_targets = []  
+    for curr_state in all_states[:2] : 
+        print(f'extracting state {curr_state}')
+        acs_data = data_source.get_data(states = [curr_state], download=False)
+        features, target, _ = ACSIncome.df_to_pandas(acs_data)
 
-#Personalize the decision thresholds
-lst_threshold_target = [int(acs_data['PINCP'].quantile(0.25)), int(acs_data['PINCP'].median()), acs_data['PINCP'].quantile(0.75)]
+        state_features = features.sample(n=500, random_state=42)
+        #state_target = target.loc[state_features.index] 
+        state_targets = acs_data['PINCP'].loc[state_features.index]
+
+        all_features.append(state_features)  # Append the features to the list
+        all_targets.append(state_targets) 
+        
+
+    features = pd.concat(all_features, axis=0, ignore_index=True)
+    targets = pd.concat(all_targets, axis=0, ignore_index=True)
+
+    print('dataset extracted')
+
+
+
+if state != 'ALL' : 
+    data = pd.concat([features, targets.astype(int)], axis=1)
+    #Personalize the decision thresholds
+    lst_threshold_target = [int(acs_data['PINCP'].quantile(0.25)), int(acs_data['PINCP'].median()), int(acs_data['PINCP'].quantile(0.75))]
+
+
+elif state == 'ALL' : 
+    data = pd.concat([features, targets], axis=1)
+    lst_threshold_target = [int(data['PINCP'].quantile(0.25)), int(data['PINCP'].median()), int(data['PINCP'].quantile(0.75))]
+    # Shuffle the dataset rows
+    data = data.sample(frac=1, random_state=42).reset_index(drop=True)
+
+
+
 
 # Main execution (create the file and write the headers)
 write_results_to_csv([], state, model_type, header=True)
 # Loop over several threshold targets (same dataset but with different Y distribution)
+
 for threshold_target in lst_threshold_target:
     print(f"Threshold target: {threshold_target}")
-    #Setup the new target
-    data['PINCP'] = (acs_data['PINCP'] > threshold_target).astype(int)
+    #Setup the new target only if we are working with a single state
+    if state != 'ALL' : 
+        print('setting up the threshold')
+        data['PINCP'] = (acs_data['PINCP'] > threshold_target).astype(int)
+    elif state == 'ALL' :
+        print('setting up the threshold')
+        data['PINCP'] = (data['PINCP'] > threshold_target).astype(int)
+    
     protected_att = 'SEX'
     sens_att = 'PINCP'  #target
     # Define the quasi-identifiers and the sensitive and protected attribute
@@ -141,7 +231,10 @@ for threshold_target in lst_threshold_target:
                 if method == 'l-diversity':
                     # Apply l-diversity
                     anon_parameter = 2
-                    train_data_anon = l_diversity(train_data_anon, [], quasi_ident, sens_att, cfg.fixed_k, anon_parameter, supp_level, hierarchies)
+                    if k > 1 : 
+                        train_data_anon = l_diversity(train_data_anon, [], quasi_ident, sens_att, cfg.fixed_k, anon_parameter, supp_level, hierarchies)
+                    elif k == 1 : 
+                        train_data_anon = train_data.copy()
                     # Assert that the level of l-diversity is exactly met
                     actual_l_diversity = pycanon.anonymity.l_diversity(train_data_anon, quasi_ident, [sens_att])
                     assert actual_l_diversity == anon_parameter, f"l-diversity constraint not met: Expected == {anon_parameter}, but got {actual_l_diversity}"
@@ -150,11 +243,14 @@ for threshold_target in lst_threshold_target:
                 if method == 't-closeness':
                     # Apply t-closeness
                     anon_parameter = t_params[count_t % len(t_params)]
-                    train_data_anon = t_closeness(train_data_anon, [], quasi_ident, sens_att, cfg.fixed_k, anon_parameter, supp_level, hierarchies)
+                    if k > 1 :
+                        train_data_anon = t_closeness(train_data_anon, [], quasi_ident, sens_att, cfg.fixed_k, anon_parameter, supp_level, hierarchies)
+                    elif k == 1 : 
+                        train_data_anon = train_data.copy()
                     # Assert that the level of t-closeness is satisfied
                     actual_t_closeness = pycanon.anonymity.t_closeness(train_data_anon, quasi_ident, [sens_att], True)
                     assert actual_t_closeness <= anon_parameter, f"t-closeness constraint not met: Expected <= {anon_parameter}, but got {actual_t_closeness:.2f}"
-                    count_l+=1  #move to the next target value
+                    count_t+=1  #move to the next target value
                     print(f"achieved level of t_closeness : {actual_t_closeness}")
 
                 if k > 1:
@@ -185,14 +281,20 @@ for threshold_target in lst_threshold_target:
                 test_data = pd.concat([X_test, y_test], axis=1)
                 df_fm = X_test.copy()
                 df_fm[sens_att] = y_test.values
-                y_pred_col = np.round(model.predict(X_test)).reshape(-1).astype(int)
+                #This one will be used for individual fairness
+                soft_ypred = model.predict_proba(X_test)
+                #This one will be used for group fairness
+                y_pred_col = model.predict(X_test)
                 df_fm['y_pred'] = y_pred_col
                 dic_metrics = get_metrics(df_fm, protected_att, sens_att)
                 
-
-                fairness_score = individual_fairness(y_pred_col, X_test.values, similarity_metric='euclidean', k=5)
+                #Add NCP to the measures + Sample 10%-20%-... from all US dataset
+                fairness_score = estimate_lipschitz_constant(soft_ypred, X_test.values, similarity_metric='euclidean')
+                #fairness_score = individual_fairness(y_pred_col, X_test.values, similarity_metric='euclidean', k=5)
+                ncp = calculate_total_ncp(train_data, train_data_anon)
                 print(f"Individual Fairness Score: {fairness_score}")
                 dic_metrics['INF'] = np.abs(fairness_score)
+                dic_metrics['NCP'] = ncp
                 print(f"metrics : {dic_metrics}")
 
                 # Write results to csv
