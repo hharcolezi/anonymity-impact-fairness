@@ -150,7 +150,7 @@ elif state == 'ALL' :
     ]
     all_features = []
     all_targets = []  
-    for curr_state in all_states[:2] : 
+    for curr_state in all_states : 
         print(f'extracting state {curr_state}')
         acs_data = data_source.get_data(states = [curr_state], download=False)
         features, target, _ = ACSIncome.df_to_pandas(acs_data)
