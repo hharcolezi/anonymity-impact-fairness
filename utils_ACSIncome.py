@@ -144,7 +144,7 @@ def write_suppression_results_to_csv(values, state, model_type, header=False):
 def write_results_to_csv(values, state, model_type, header=False):
     """Write the results to a csv file."""
 
-    file_path = f"results/per_state/ACSIncome_{state}_{model_type}_anonymity_impact_fairness_suppression.csv"
+    file_path = f"results/per_state/ACSIncome_{state}_{model_type}_anonymity_impact_fairness_new.csv"
     # Check if the file exists and is empty
     file_exists = os.path.isfile(file_path)
     file_empty = os.stat(file_path).st_size == 0 if file_exists else True
@@ -152,7 +152,7 @@ def write_results_to_csv(values, state, model_type, header=False):
     with open(file_path, mode='a', newline='') as scores_file:
         scores_writer = csv.writer(scores_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
         if header and file_empty:# Write header if specified and file is empty
-            scores_writer.writerow(["SEED", "dataset", "protected_att", "target", "method", "k_parameter", "anon_parameter", "SPD", "EOD", "MAD", "PED", "PRD", "ACC", "f1", "Precision", "Recall", "ROC_AUC", "CM", "INF"])
+            scores_writer.writerow(["SEED", "dataset", "protected_att", "target", "method", "k_parameter", "anon_parameter", "SPD", "EOD", "MAD", "PED", "PRD", "ACC", "f1", "Precision", "Recall", "ROC_AUC", "CM", "INF", "NCP"])
             scores_writer.writerow(values)
         if not header: # Write the actual values
             print('writing the results')
@@ -309,15 +309,14 @@ def calculate_total_ncp(original_df, generalized_df):
  
     # Step 2: Initialize variables for total NCP and number of tuples
     total_ncp = 0
-    num_rows = original_df.shape[0]
+    num_rows = generalized_df.shape[0]
     num_attributes = original_df.shape[1]
- 
     # Step 3: Go through each tuple in the generalized dataset
     for idx in range(num_rows):
         ncp_t = 0
         for col in generalized_df.columns:
             # Step 4: If the value is 'any', compute its contribution to NCP
-            if generalized_df.loc[idx, col] == 'any':
+            if generalized_df.loc[idx, col] == '*':
                 ncp_t += 1 / distinct_counts[col]
  
         # Step 5: Divide NCP for this tuple by the total number of attributes
