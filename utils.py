@@ -6,6 +6,13 @@ from sklearn.metrics import recall_score, accuracy_score, f1_score, precision_sc
 from sklearn.preprocessing import LabelEncoder
 import os
 import csv
+from sklearn.metrics.pairwise import cosine_similarity
+from scipy.stats import entropy
+import math
+import ray
+import os
+from sklearn.neighbors import NearestNeighbors
+
 
 def get_metrics(df_fm, protected_attribute, target):
     
@@ -103,10 +110,10 @@ def get_metrics(df_fm, protected_attribute, target):
     
     return dic_metrics
 
-def write_suppression_results_to_csv(values, header=False):
+def write_main_results_to_csv(values, dataset, header=False):
     """Write the results to a csv file."""
 
-    file_path = "results/anonymity_impact_fairness_suppression.csv"
+    file_path = "results/anonymity_impact_fairness_" + dataset + ".csv"
     # Check if the file exists and is empty
     file_exists = os.path.isfile(file_path)
     file_empty = os.stat(file_path).st_size == 0 if file_exists else True
@@ -114,14 +121,14 @@ def write_suppression_results_to_csv(values, header=False):
     with open(file_path, mode='a', newline='') as scores_file:
         scores_writer = csv.writer(scores_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
         if header and file_empty:# Write header if specified and file is empty
-            scores_writer.writerow(["SEED", "dataset", "protected_att", "target", "method", "anon_parameter", "supp_level", "SPD", "EOD", "MAD", "PED", "PRD", "ACC", "f1", "Precision", "Recall", "ROC_AUC", "CM"])
+            scores_writer.writerow(["SEED", "protected_att", "target", "method", "k_parameter", "anon_parameter", "SPD", "EOD", "MAD", "PED", "PRD", "ACC", "f1", "Precision", "Recall", "ROC_AUC", "CM", "ASF", "ALF", "NCF"])
         if not header: # Write the actual values
             scores_writer.writerow(values)
 
-def write_results_to_csv(values, header=False):
+def write_target_distribution_results_to_csv(values, dataset, header=False):
     """Write the results to a csv file."""
 
-    file_path = "results/anonymity_impact_fairness.csv"
+    file_path = "results/anonymity_impact_fairness_target_distribution_" + dataset + ".csv"
     # Check if the file exists and is empty
     file_exists = os.path.isfile(file_path)
     file_empty = os.stat(file_path).st_size == 0 if file_exists else True
@@ -129,10 +136,55 @@ def write_results_to_csv(values, header=False):
     with open(file_path, mode='a', newline='') as scores_file:
         scores_writer = csv.writer(scores_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
         if header and file_empty:# Write header if specified and file is empty
-            scores_writer.writerow(["SEED", "dataset", "protected_att", "target", "method", "k_parameter", "anon_parameter", "SPD", "EOD", "MAD", "PED", "PRD", "ACC", "f1", "Precision", "Recall", "ROC_AUC", "CM"])
+            scores_writer.writerow(["SEED", "protected_att", "target", "method", "anon_parameter", "threshold_target", "SPD", "EOD", "MAD", "PED", "PRD", "ACC", "f1", "Precision", "Recall", "ROC_AUC", "CM", "ASF", "ALF", "NCF"])
         if not header: # Write the actual values
             scores_writer.writerow(values)
 
+def write_suppression_results_to_csv(values, dataset, header=False):
+    """Write the results to a csv file."""
+
+    file_path = "results/anonymity_impact_fairness_suppression_" + dataset + ".csv"
+    # Check if the file exists and is empty
+    file_exists = os.path.isfile(file_path)
+    file_empty = os.stat(file_path).st_size == 0 if file_exists else True
+
+    with open(file_path, mode='a', newline='') as scores_file:
+        scores_writer = csv.writer(scores_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+        if header and file_empty:# Write header if specified and file is empty
+            scores_writer.writerow(["SEED", "protected_att", "target", "method", "anon_parameter", "supp_level", "SPD", "EOD", "MAD", "PED", "PRD", "ACC", "f1", "Precision", "Recall", "ROC_AUC", "CM", "ASF", "ALF", "NCF"])
+        if not header: # Write the actual values
+            scores_writer.writerow(values)
+
+def write_classifier_results_to_csv(values, dataset, header=False):
+    """Write the results to a csv file."""
+
+    file_path = "results/anonymity_impact_fairness_classifier_" + dataset + ".csv"
+    # Check if the file exists and is empty
+    file_exists = os.path.isfile(file_path)
+    file_empty = os.stat(file_path).st_size == 0 if file_exists else True
+
+    with open(file_path, mode='a', newline='') as scores_file:
+        scores_writer = csv.writer(scores_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+        if header and file_empty:# Write header if specified and file is empty
+            scores_writer.writerow(["SEED", "protected_att", "target", "model_name", "method", "anon_parameter", "SPD", "EOD", "MAD", "PED", "PRD", "ACC", "f1", "Precision", "Recall", "ROC_AUC", "CM", "ASF", "ALF", "NCF"])
+        if not header: # Write the actual values
+            scores_writer.writerow(values)
+           
+def write_data_fraction_results_to_csv(values, dataset, header=False):
+    """Write the results to a csv file."""
+
+    file_path = "results/anonymity_impact_fairness_data_fraction_" + dataset + ".csv"
+    # Check if the file exists and is empty
+    file_exists = os.path.isfile(file_path)
+    file_empty = os.stat(file_path).st_size == 0 if file_exists else True
+
+    with open(file_path, mode='a', newline='') as scores_file:
+        scores_writer = csv.writer(scores_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+        if header and file_empty:# Write header if specified and file is empty
+            scores_writer.writerow(["SEED", "protected_att", "target", "method", "anon_parameter", "fraction", "SPD", "EOD", "MAD", "PED", "PRD", "ACC", "f1", "Precision", "Recall", "ROC_AUC", "CM", "ASF", "ALF", "NCF"])
+        if not header: # Write the actual values
+            scores_writer.writerow(values)
+ 
 def clean_process_data(data, dataset, sens_att, protected_att, threshold_target=None):
     """Clean and preprocess the dataset."""
     
@@ -165,10 +217,25 @@ def clean_process_data(data, dataset, sens_att, protected_att, threshold_target=
         data[sens_att] = data[sens_att].apply(lambda x: int(x=='yes'))
         if protected_att == 'age':
             data[protected_att] = data[protected_att].apply(lambda x: 1 if 25 <= x <= 60 else 0)
-        elif protected_att == 'race':
+        elif protected_att == 'marital':
             data[protected_att] = data[protected_att].apply(lambda x: 1 if x == 'married' else 0)
 
-            data.reset_index(drop=True, inplace=True)   
+        data.reset_index(drop=True, inplace=True)   
+
+
+    elif dataset == 'ACSIncome':
+        data.columns = data.columns.str.strip()
+
+        # Transform protected and target attributes
+        data[sens_att] = data[sens_att].apply(lambda x: int(x>threshold_target))
+        if protected_att == 'SEX':
+            data[protected_att] = data[protected_att].apply(lambda x: 1 if x == 1 else 0)
+        elif protected_att == 'RAC1P':
+            data[protected_att] = data[protected_att].apply(lambda x: 1 if x == 1 else 0)
+
+        data.reset_index(drop=True, inplace=True)   
+
+
     return data
 
 def get_hierarchies(data, dataset):
@@ -194,103 +261,27 @@ def get_hierarchies(data, dataset):
                         1: np.array(["*"] * len(data["gender"].unique()))}  
                 }
     
-    elif dataset == 'bank':
+
+    elif dataset == 'ACSIncome':
         return {
-                "job": {
-                    0: data["job"].unique(),
-                    1: data["job"].replace({
-                        "admin.": "White Collar", "technician": "White Collar", "management": "White Collar", 
-                        "services": "Blue Collar","self-employed": "Blue Collar", "entrepreneur": "Blue Collar", "housemaid": "Blue Collar", "blue-collar": "Blue Collar", 
-                        "unknown": "Other", "unemployed": "Other", "student": "Other", "retired": "Other"
-                    }),
-                    2: data["job"].replace({
-                        "admin.": "Employed", "technician": "Employed", "services": "Employed", "management": "Employed", "blue-collar": "Employed", "self-employed": "Employed", "entrepreneur": "Employed", "housemaid": "Employed",
-                        "retired": "Unemployed","unemployed": "Unemployed", "student": "Unemployed", "unknown": "Unemployed"
-                    }),
-                    3: np.array(["*"] * len(data["job"].unique()))
-                },
-                "marital": {
-                    0: data["marital"].unique(),
-                    1: np.array(["*"] * len(data["marital"].unique()))
-                },
-                "education": {
-                    0: data["education"].unique(),
-                    1: np.array(["*"] * len(data["education"].unique()))
-                },
-                "default": {
-                    0: data["default"].unique(),
-                    1: np.array(["*"] * len(data["default"].unique()))
-                },
-                "housing": {
-                    0: data["housing"].unique(),
-                    1: np.array(["*"] * len(data["housing"].unique()))
-                },
-                "loan": {
-                    0: data["loan"].unique(),
-                    1: np.array(["*"] * len(data["loan"].unique()))
-                },
-                "contact": {
-                    0: data["contact"].unique(),
-                    1: np.array(["*"] * len(data["contact"].unique()))
-                },
-                "month": {
-                    0: data["month"].unique(),
-                    1: data["month"].replace({
-                        "jan": "Quarter 1", "feb": "Quarter 1", "mar": "Quarter 1",
-                        "apr": "Quarter 2", "may": "Quarter 2", "jun": "Quarter 2",
-                        "jul": "Quarter 3", "aug": "Quarter 3", "sep": "Quarter 3",
-                        "oct": "Quarter 4", "nov": "Quarter 4", "dec": "Quarter 4"
-                    }),
-                    2: data["month"].replace({
-                        "jan": "First Half", "feb": "First Half", "mar": "First Half", "apr": "First Half",
-                        "may": "First Half", "jun": "First Half", "jul": "Second Half", "aug": "Second Half",
-                        "sep": "Second Half", "oct": "Second Half", "nov": "Second Half", "dec": "Second Half"
-                    }),
-                    3: np.array(["*"] * len(data["month"].unique()))
-                },
-                "poutcome": {
-                    0: data["poutcome"].unique(),
-                    1: np.array(["*"] * len(data["poutcome"].unique()))
-                },
-                "balance": {
-                    0: data["balance"].unique(),
-                    1: pd.cut(data["balance"], bins=[-float("inf"), 500, 5000, float("inf")]).astype(str),
-                    2: pd.cut(data["balance"], bins=[-float("inf"), 500, 1000, 5000, float("inf")]).astype(str),
-                    3: np.array(["*"] * len(data["balance"].unique()))
-                },
-                "day": {
-                    0: data["day"].unique(),
-                    1: pd.cut(data["day"], bins=[0, 10, 20, 31]).astype(str),
-                    2: pd.cut(data["day"], bins=[0, 7, 14, 21, 31]).astype(str),
-                    3: np.array(["*"] * len(data["day"].unique()))
-                },
-                "duration": {
-                    0: data["duration"].unique(),
-                    1: pd.cut(data["duration"], bins=[-float("inf"), 100, 300, float("inf")]).astype(str),
-                    2: pd.cut(data["duration"], bins=range(0, data["duration"].max(), 60)).astype(str),
-                    3: pd.cut(data["duration"], bins=range(0, data["duration"].max(), 120)).astype(str),
-                    4: np.array(["*"] * len(data["duration"].unique()))
-                },
-                "campaign": {
-                    0: data["campaign"].unique(),
-                    1: pd.cut(data["campaign"], bins=range(0, data["campaign"].max(), 2)).astype(str),
-                    2: pd.cut(data["campaign"], bins=range(0, data["campaign"].max(), 4)).astype(str),
-                    3: pd.cut(data["campaign"], bins=[-float("inf"), 3, 5, float("inf")]).astype(str),
-                    4: np.array(["*"] * len(data["campaign"].unique()))
-                },
-                "pdays": {
-                    0: data["pdays"].unique(),
-                    1: pd.cut(data["pdays"], bins=range(-2, data["pdays"].max(), 5)).astype(str),
-                    2: pd.cut(data["pdays"], bins=range(-2, data["pdays"].max(), 25)).astype(str),
-                    3: pd.cut(data["pdays"], bins=range(-2, data["pdays"].max(), 50)).astype(str),
-                    4: np.array(["*"] * len(data["pdays"].unique()))
-                },
-                "previous": {
-                    0: data["previous"].unique(),
-                    1: pd.cut(data["previous"], bins=range(-1, data["previous"].max(), 5)).astype(str),
-                    2: pd.cut(data["previous"], bins=range(-1, data["previous"].max(), 10)).astype(str),
-                    3: pd.cut(data["previous"], bins=range(-1, data["previous"].max(), 15)).astype(str),
-                    4: np.array(["*"] * len(data["previous"].unique()))},
+                "AGEP": dict(pd.read_csv("hierarchies/ACSIncome/AGEP.csv", header=None)),
+                "COW" : dict(pd.read_csv("hierarchies/ACSIncome/COW.csv", header=None)),
+                "SCHL": dict(pd.read_csv("hierarchies/ACSIncome/SCHL.csv", header=None)),
+                "MAR" : dict(pd.read_csv("hierarchies/ACSIncome/MAR.csv", header=None)),
+                "OCCP" : dict(pd.read_csv("hierarchies/ACSIncome/OCCP.csv", header=None)),
+                "POBP" : dict(pd.read_csv("hierarchies/ACSIncome/POBP.csv", header=None)),
+                "WAOB" : dict(pd.read_csv("hierarchies/ACSIncome/WAOB.csv", header=None)),
+                "RELP" : dict(pd.read_csv("hierarchies/ACSIncome/RELP.csv", header=None)),
+                "RAC1P": dict(pd.read_csv("hierarchies/ACSIncome/RAC1P.csv", header=None)),
+                "PINCP": dict(pd.read_csv("hierarchies/ACSIncome/PINCP.csv", header=None)),
+                "WKHP": {0: pd.Series(range(int(data["WKHP"].max()) + 1)),  # Get the max value and convert to int
+                        1: generate_intervals(range(int(data["WKHP"].max()) + 1), 0, 100, 5),
+                        2: generate_intervals(range(int(data["WKHP"].max()) + 1), 0, 100, 25),
+                        3: generate_intervals(range(int(data["WKHP"].max()) + 1), 0, 100, 50),
+                        4: np.array(["*"] * (int(data["WKHP"].max()) + 1))  # Convert max value to int
+                        },
+                "SEX": {0: data["SEX"].unique(),
+                        1: np.array(["*"] * len(data["SEX"].unique()))}  
                 }
 
 def get_generalization_levels(train_data_anon, quasi_ident, hierarchies):
@@ -375,7 +366,162 @@ def generate_intervals(
 
     return pd.Series(intervals, index=range(len(quasi_ident)))
 
+@ray.remote
+def compute_lipschitz_fairness(indices, predictions, features, similarity_metric, k=100):
+    """
+    Compute Lipschitz ratios for a chunk of data using approximate nearest neighbors.
+    """
+    local_max = 0.0
+    knn = NearestNeighbors(n_neighbors=k, metric=similarity_metric).fit(features)
 
+    for idx in indices:
+        distances, neighbors = knn.kneighbors([features[idx]], return_distance=True)
+        for distance, neighbor in zip(distances[0], neighbors[0]):
+            if distance <= 1e-10:  # Skip identical features
+                continue
+
+            # Compute prediction difference
+            pred_diff = entropy(predictions[idx], predictions[neighbor])
+            lipschitz_ratio = pred_diff / distance
+            local_max = max(local_max, lipschitz_ratio)
+
+    return local_max
+
+def lipschitz_fairness(predictions, features, similarity_metric='euclidean', num_workers=os.cpu_count(), k=100):
+    """
+    Approximate Lipschitz constant estimation using Ray and k-Nearest Neighbors.
+    """
+    n = len(features)
+    indices = np.arange(n)
+    chunk_size = math.ceil(n / num_workers)
+    ray_tasks = []
+
+    for i in range(0, n, chunk_size):
+        chunk_indices = indices[i:i + chunk_size]
+        ray_tasks.append(
+            compute_lipschitz_fairness.remote(chunk_indices, predictions, features, similarity_metric, k)
+        )
+
+    results = ray.get(ray_tasks)
+    return max(results) if results else 0.0
+
+
+@ray.remote
+def compute_similarity_fairness(indices, predictions, distances, neighbors):
+    """
+    Compute individual fairness for a chunk of data using precomputed k-NN distances and neighbors.
+
+    Parameters:
+        indices (list): Indices of the chunk.
+        predictions (array-like): Model predictions for individuals.
+        distances (array-like): Distances from k-NN.
+        neighbors (array-like): Indices of k-NN neighbors.
+
+    Returns:
+        float: Mean individual fairness score for the chunk.
+    """
+    fairness_scores = []
+    for idx in indices:
+        # Iterate through the k-nearest neighbors (skip the first as it's the individual itself)
+        for neighbor_idx, distance in zip(neighbors[idx][1:], distances[idx][1:]):
+            if distance < 1e-6:  # Treat very small distances as non-zero
+                distance = 1e-6
+            pred_diff = abs(predictions[idx] - predictions[neighbor_idx])
+            fairness_scores.append(pred_diff * distance)
+    return np.mean(fairness_scores) if fairness_scores else 0.0
+
+def similarity_fairness(predictions, features, similarity_metric='euclidean', k=100, num_workers=os.cpu_count()):
+    """
+    Compute individual fairness for model predictions using k-NN and Ray for parallelization.
+
+    Parameters:
+        predictions (array-like): Model predictions for individuals.
+        features (array-like): Feature matrix (N x D).
+        similarity_metric (str): Similarity metric ('cosine' or 'euclidean').
+        k (int): Number of nearest neighbors to consider.
+        num_workers (int): Number of parallel workers (default: number of CPU cores).
+
+    Returns:
+        float: Average individual fairness score (lower is better).
+    """
+    n = len(features)
+    if k >= n:
+        raise ValueError(f"Invalid k: {k}. Must be less than the number of data points: {n}.")
+    
+    # Fit k-NN on the features
+    knn = NearestNeighbors(n_neighbors=k + 1, metric=similarity_metric).fit(features)
+    distances, neighbors = knn.kneighbors(features, return_distance=True)
+
+    # Divide indices into chunks for parallel processing
+    chunk_size = max(1, n // num_workers)
+    ray_tasks = [
+        compute_similarity_fairness.remote(
+            range(start, min(start + chunk_size, n)), predictions, distances, neighbors
+        )
+        for start in range(0, n, chunk_size)
+    ]
+
+    # Gather results from all chunks and compute the overall mean
+    fairness_scores = ray.get(ray_tasks)
+    return np.mean(fairness_scores) if fairness_scores else 0.0
+
+@ray.remote
+def compute_neighborhood_consistency_fairness(indices, predictions, distances, neighbors):
+    """
+    Compute Neighborhood Consistency for a chunk of data.
+
+    Parameters:
+        indices (list): Indices of the chunk.
+        predictions (array-like): Model predictions for individuals.
+        distances (array-like): Distances from k-NN.
+        neighbors (array-like): Indices of k-NN neighbors.
+
+    Returns:
+        float: Mean neighborhood consistency score for the chunk.
+    """
+    consistency_scores = []
+    for idx in indices:
+        # Calculate consistency score for the current individual
+        local_consistency = np.mean([
+            abs(predictions[idx] - predictions[neighbor_idx])
+            for neighbor_idx in neighbors[idx][1:]  # Skip the first neighbor (the individual itself)
+        ])
+        consistency_scores.append(local_consistency)
+
+    return np.mean(consistency_scores)
+
+
+def neighborhood_consistency_fairness(predictions, features, similarity_metric='euclidean', k=100, num_workers=os.cpu_count()):
+    """
+    Compute Neighborhood Consistency Metric using k-NN and Ray for parallelization.
+
+    Parameters:
+        predictions (array-like): Model predictions for individuals.
+        features (array-like): Feature matrix (N x D).
+        similarity_metric (str): Similarity metric ('cosine' or 'euclidean').
+        k (int): Number of nearest neighbors to consider.
+        num_workers (int): Number of parallel workers (default: number of CPU cores).
+
+    Returns:
+        float: Average neighborhood consistency score (lower is better).
+    """
+    # Fit k-NN on the features
+    knn = NearestNeighbors(n_neighbors=k + 1, metric=similarity_metric).fit(features)
+    distances, neighbors = knn.kneighbors(features, return_distance=True)
+
+    # Divide indices into chunks for parallel processing
+    n = len(features)
+    chunk_size = n // num_workers
+    ray_tasks = [
+        compute_neighborhood_consistency_fairness.remote(
+            range(start, min(start + chunk_size, n)), predictions, distances, neighbors
+        )
+        for start in range(0, n, chunk_size)
+    ]
+
+    # Gather results from all chunks and compute the overall mean
+    consistency_scores = ray.get(ray_tasks)
+    return np.mean(consistency_scores)
 
 def calculate_total_ncp(original_df, generalized_df):
     """
