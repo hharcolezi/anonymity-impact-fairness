@@ -523,37 +523,4 @@ def neighborhood_consistency_fairness(predictions, features, similarity_metric='
     consistency_scores = ray.get(ray_tasks)
     return np.mean(consistency_scores)
 
-def calculate_total_ncp(original_df, generalized_df):
-    """
-    Calculate the total NCP based on the difference between the original and generalized datasets.
- 
-    Parameters:
-    - original_df: The original dataset (DataFrame).
-    - generalized_df: The generalized dataset with 'any' values (DataFrame).
- 
-    Returns:
-    - Total NCP (float): The total Normalized Certainty Penalty.
-    """
-    # Step 1: Calculate distinct values for each attribute in the original dataset
-    distinct_counts = original_df.nunique()
- 
-    # Step 2: Initialize variables for total NCP and number of tuples
-    total_ncp = 0
-    num_rows = original_df.shape[0]
-    num_attributes = original_df.shape[1]
- 
-    # Step 3: Go through each tuple in the generalized dataset
-    for idx in range(num_rows):
-        ncp_t = 0
-        for col in generalized_df.columns:
-            # Step 4: If the value is 'any', compute its contribution to NCP
-            if generalized_df.loc[idx, col] == 'any':
-                ncp_t += 1 / distinct_counts[col]
- 
-        # Step 5: Divide NCP for this tuple by the total number of attributes
-        ncp_t /= num_attributes
-        total_ncp += ncp_t
- 
-    # Step 6: Return the average NCP across all tuples
-    #total_ncp /= num_rows
-    return total_ncp
+
