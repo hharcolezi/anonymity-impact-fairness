@@ -68,7 +68,7 @@ Consolidated findings from the above experiments are presented in:
 └── README.md                               # Project description and instructions
 
 # Clone the repository
-git clone https://github.com/your_username/anonymity-impact-fairness.git
+git clone https://github.com/anonymity-impact-fairness.git
 cd anonymity-impact-fairness
 
 # Install dependencies (list dependencies in README or use requirements.txt)
