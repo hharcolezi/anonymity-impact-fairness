@@ -1,9 +1,12 @@
 # Fairness Evaluation Under Anonymization Techniques
 
-This repository investigates the interplay between anonymization techniques and fairness in machine learning (ML) models. Through various case studies presented in Python notebooks, we address several critical research questions about the effects of anonymization, suppression, dataset characteristics, and classifier choices on fairness metrics. 
-The results and findiings of this research are provided in the paper : ***Title and link later*** 
+This repository investigates the interplay between anonymization techniques and fairness in machine learning (ML) models. Through various case studies presented in Python notebooks, we address several critical research questions about the effects of anonymization, record suppression, dataset characteristics, and classifier choices on fairness metrics. 
+
+## Install dependencies
+To set up the environment and install dependencies: ```pip install -r requirements.txt```
 
 ## Research Questions (RQs)
+Our experiments are designed to address the following key research questions:
 
 ### RQ1: Impact of Anonymization Techniques on Fairness
 How do different anonymization techniques (𝑘-anonymity, ℓ-diversity, and 𝑡-closeness) and their parameters affect the fairness of ML models?  
@@ -68,22 +71,5 @@ Consolidated findings from the above experiments are presented in:
 
 └── README.md                               # Project description and instructions
 
-# Clone the repository
-git clone https://github.com/anonymity-impact-fairness.git
-
-cd anonymity-impact-fairness
-
-# Install dependencies (list dependencies in README or use requirements.txt)
-pip install -r requirements.txt
-
-# Run specific experiments
-# Replace <notebook_name> with the name of the desired notebook (e.g., 1_K_Anonymity_Impact_Fairness.ipynb)
-jupyter notebook <notebook_name>.ipynb
-
-# Example: Run the experiment for k-Anonymity's impact on fairness
-jupyter notebook 1_K_Anonymity_Impact_Fairness.ipynb
-
-# Analyze consolidated results
-# Open the notebook for results and analysis
-jupyter notebook 2_Results_Anon_Imp_Fairness.ipynb
-
+## Acknowledgments
+This repository leverages datasets obtained via the [Folktables](https://github.com/socialfoundations/folktables) Python library, which provides access to the American Community Survey (ACS) data.
