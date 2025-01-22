@@ -1,6 +1,6 @@
 # Fairness Evaluation Under Anonymization Techniques
 
-This repository investigates the interplay between anonymization techniques and fairness in machine learning (ML) models. Through various case studies presented in Python notebooks, we address several critical research questions about the effects of anonymization, record suppression, dataset characteristics, and classifier choices on fairness metrics. 
+This repository contains the implementation of the experiments and methodologies presented in the paper **"Fair Play for Individuals, Foul Play for Groups? Auditing Anonymization’s Impact on ML Fairness"**. The key contributions of this paper is a systematical investigation of the interplay between anonymization techniques and fairness in machine learning (ML) models. Through various case studies, we address several critical research questions about the effects of anonymization, record suppression, dataset characteristics, and classifier choices on fairness metrics. 
 
 ## Install dependencies
 To set up the environment and install dependencies: ```pip install -r requirements.txt```
