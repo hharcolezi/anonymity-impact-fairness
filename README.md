@@ -2,10 +2,12 @@
 
 This repository contains the implementation of the experiments and methodologies presented in the paper **"Fair Play for Individuals, Foul Play for Groups? Auditing Anonymization’s Impact on ML Fairness"**. The key contributions of this paper is a systematical investigation of the interplay between anonymization techniques and fairness in machine learning (ML) models. Through various case studies, we address several critical research questions about the effects of anonymization, record suppression, dataset characteristics, and classifier choices on fairness metrics. 
 
-## Install dependencies
+## Install Dependencies
 To set up the environment and install dependencies: ```pip install -r requirements.txt```
 
-## Research Questions (RQs)
+## Running the Experiments
+To run an experiment, simply use the following command in your terminal: ```python <name_of_experiment_file>.py```
+
 Our experiments are designed to address the following key Research Questions (RQs):
 
 ### RQ1: Impact of Anonymization Techniques on Fairness
