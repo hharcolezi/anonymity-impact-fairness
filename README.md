@@ -72,4 +72,4 @@ Consolidated findings from the above experiments are presented in:
 └── README.md                               # Project description and instructions
 
 ## Acknowledgments
-This repository leverages datasets obtained via the [Folktables](https://github.com/socialfoundations/folktables) Python library, which provides access to the American Community Survey (ACS) data.
+This repository leverages datasets obtained via the [Folktables](https://github.com/socialfoundations/folktables) Python library. Anonymization methods were implemented via the [Anjana](https://github.com/IFCA-Advanced-Computing/anjana) Python library.
