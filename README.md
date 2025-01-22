@@ -1,6 +1,7 @@
 # Fairness Evaluation Under Anonymization Techniques
 
-This repository investigates the interplay between anonymization techniques and fairness in machine learning (ML) models. Through various case studies presented in Python notebooks, we address several critical research questions about the effects of anonymization, suppression, dataset characteristics, and classifier choices on fairness metrics.
+This repository investigates the interplay between anonymization techniques and fairness in machine learning (ML) models. Through various case studies presented in Python notebooks, we address several critical research questions about the effects of anonymization, suppression, dataset characteristics, and classifier choices on fairness metrics. 
+The results and findiings of this research are provided in the paper : ***Title and link later*** 
 
 ## Research Questions (RQs)
 
