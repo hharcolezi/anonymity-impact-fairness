@@ -6,38 +6,38 @@ This repository contains the implementation of the experiments and methodologies
 To set up the environment and install dependencies: ```pip install -r requirements.txt```
 
 ## Research Questions (RQs)
-Our experiments are designed to address the following key research questions:
+Our experiments are designed to address the following key Research Questions (RQs):
 
 ### RQ1: Impact of Anonymization Techniques on Fairness
 How do different anonymization techniques (𝑘-anonymity, ℓ-diversity, and 𝑡-closeness) and their parameters affect the fairness of ML models?  
 - Experiments:  
-  - [1_K_Anonymity_Impact_Fairness.ipynb](1_K_Anonymity_Impact_Fairness.ipynb)  
-  - [1_L_Diversity_Impact_Fairness.ipynb](1_L_Diversity_Impact_Fairness.ipynb)  
-  - [1_T_Closeness_Impact_Fairness.ipynb](1_T_Closeness_Impact_Fairness.ipynb)  
+  - [1_K_Anonymity_Impact_Fairness.py](1_K_Anonymity_Impact_Fairness.py)  
+  - [1_L_Diversity_Impact_Fairness.py](1_L_Diversity_Impact_Fairness.py)  
+  - [1_T_Closeness_Impact_Fairness.py](1_T_Closeness_Impact_Fairness.py)  
 
 ### RQ2: Effect of Suppression on Fairness
 How does varying the record-level suppression threshold during anonymization impact fairness, particularly for sub-populations?  
 - Experiment:  
-  - [1_Exp_Suppression.ipynb](1_Exp_Suppression.ipynb)  
+  - [1_Exp_Suppression.py](1_Exp_Suppression.py)  
 
 ### RQ3: Influence of Target Distribution
 What is the impact of altering the target distribution on fairness metrics, specifically by varying the threshold for binarizing the income variable?  
 - Experiment:  
-  - [1_Exp_Target_Distribution.ipynb](1_Exp_Target_Distribution.ipynb)  
+  - [1_Exp_Target_Distribution.py](1_Exp_Target_Distribution.py)  
 
 ### RQ4: Role of Dataset Size
 How does dataset size mediate the trade-offs between privacy, fairness, and utility?  
 - Experiment:  
-  - [1_Exp_Data_Size_Fraction.ipynb](1_Exp_Data_Size_Fraction.ipynb)  
+  - [1_Exp_Data_Size_Fraction.py](1_Exp_Data_Size_Fraction.py)  
 
 ### RQ5: Generalizability Across Classifiers
 Do fairness results observed using XGBoost generalize across other ML classifiers, such as Random Forests and Neural Networks?  
 - Experiment:  
-  - [1_Exp_Classifiers.ipynb](1_Exp_Classifiers.ipynb)  
+  - [1_Exp_Classifiers.py](1_Exp_Classifiers.py)  
 
 ### Summarized Results
 Consolidated findings from the above experiments are presented in:  
-- [2_Results_Anon_Imp_Fairness.ipynb](2_Results_Anon_Imp_Fairness.ipynb)
+- [2_Results_Anon_Imp_Fairness.py](2_Results_Anon_Imp_Fairness.py)
 
 ## Repository Structure
 
@@ -45,21 +45,21 @@ Consolidated findings from the above experiments are presented in:
 
 ├──Results/                                 #Contains results of each experiments as csv files 
 
-├── 1_K_Anonymity_Impact_Fairness.ipynb     # RQ1: 𝑘-anonymity experiments
+├── 1_K_Anonymity_Impact_Fairness.py     # RQ1: 𝑘-anonymity experiments
 
-├── 1_L_Diversity_Impact_Fairness.ipynb     # RQ1: ℓ-diversity experiments
+├── 1_L_Diversity_Impact_Fairness.py     # RQ1: ℓ-diversity experiments
 
-├── 1_T_Closeness_Impact_Fairness.ipynb     # RQ1: 𝑡-closeness experiments
+├── 1_T_Closeness_Impact_Fairness.py     # RQ1: 𝑡-closeness experiments
 
-├── 1_Exp_Suppression.ipynb                 # RQ2: Suppression experiments
+├── 1_Exp_Suppression.py                 # RQ2: Suppression experiments
 
-├── 1_Exp_Target_Distribution.ipynb         # RQ3: Target distribution experiments
+├── 1_Exp_Target_Distribution.py         # RQ3: Target distribution experiments
 
-├── 1_Exp_Data_Size_Fraction.ipynb          # RQ4: Dataset size experiments
+├── 1_Exp_Data_Size_Fraction.py          # RQ4: Dataset size experiments
 
-├── 1_Exp_Classifiers.ipynb                 # RQ5: Generalizability experiments
+├── 1_Exp_Classifiers.py                 # RQ5: Generalizability experiments
 
-├── 2_Results_Anon_Imp_Fairness.ipynb       # Consolidated results and analysis
+├── 2_Results_Anon_Imp_Fairness.py       # Consolidated results and analysis
 
 ├── config_experiments.py                   # Configuration for experiments
 
