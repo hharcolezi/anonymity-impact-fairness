@@ -36,6 +36,7 @@ Consolidated findings from the above experiments are presented in:
 - [2_Results_Anon_Imp_Fairness.ipynb](2_Results_Anon_Imp_Fairness.ipynb)
 
 ## Repository Structure
+
 ├── 1_K_Anonymity_Impact_Fairness.ipynb     # RQ1: 𝑘-anonymity experiments
 ├── 1_L_Diversity_Impact_Fairness.ipynb     # RQ1: ℓ-diversity experiments
 ├── 1_T_Closeness_Impact_Fairness.ipynb     # RQ1: 𝑡-closeness experiments
