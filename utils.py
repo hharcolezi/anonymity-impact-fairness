@@ -284,6 +284,38 @@ def get_hierarchies(data, dataset):
                         1: np.array(["*"] * len(data["SEX"].unique()))}  
                 }
 
+
+    elif dataset == 'ACSPublicCoverage':
+        return {
+                "AGEP": dict(pd.read_csv("hierarchies/ACSIncome/AGEP.csv", header=None)),
+                "SCHL": dict(pd.read_csv("hierarchies/ACSIncome/SCHL.csv", header=None)),
+                "MAR" : dict(pd.read_csv("hierarchies/ACSIncome/MAR.csv", header=None)),
+                "DIS" : dict(pd.read_csv("hierarchies/ACSIncome/DIS.csv", header=None)),
+                "POBP" : dict(pd.read_csv("hierarchies/ACSIncome/POBP.csv", header=None)),
+                "WAOB" : dict(pd.read_csv("hierarchies/ACSIncome/WAOB.csv", header=None)),
+                "RELP" : dict(pd.read_csv("hierarchies/ACSIncome/RELP.csv", header=None)),
+                "ESP" : dict(pd.read_csv("hierarchies/ACSIncome/ESP.csv", header=None)),
+                "ESR" : dict(pd.read_csv("hierarchies/ACSIncome/ESR.csv", header=None)),
+                "DREM" : dict(pd.read_csv("hierarchies/ACSIncome/DREM.csv", header=None)),
+                "MIL" : dict(pd.read_csv("hierarchies/ACSIncome/MIL.csv", header=None)),
+                "NATIVITY" : dict(pd.read_csv("hierarchies/ACSIncome/NATIVITY.csv", header=None)),
+                "ST" : dict(pd.read_csv("hierarchies/ACSIncome/ST.csv", header=None)),
+                "CIT" : dict(pd.read_csv("hierarchies/ACSIncome/CIT.csv", header=None)),
+                "DEYE" : dict(pd.read_csv("hierarchies/ACSIncome/DEYE.csv", header=None)),
+                "DEAR" : dict(pd.read_csv("hierarchies/ACSIncome/DEAR.csv", header=None)),
+                "MIG" : dict(pd.read_csv("hierarchies/ACSIncome/MIG.csv", header=None)),
+                "PUBCOV" : dict(pd.read_csv("hierarchies/ACSIncome/PUBCOV.csv", header=None)),
+                "ANC" : dict(pd.read_csv("hierarchies/ACSIncome/ANC.csv", header=None)),
+                "FER" : dict(pd.read_csv("hierarchies/ACSIncome/FER.csv", header=None)),
+                "RAC1P": dict(pd.read_csv("hierarchies/ACSIncome/RAC1P.csv", header=None)),
+                "PINCP": dict(pd.read_csv("hierarchies/ACSIncome/PINCP.csv", header=None)),
+                #"RELP": {0: data["RELP"].unique(),
+                #                1: np.array(["*"] * len(data["RELP"].unique()))},
+                "SEX": {1.0: data["SEX"].unique(),
+                        2.0: np.array(["*"] * len(data["SEX"].unique()))}  
+            
+                }
+
 def get_generalization_levels(train_data_anon, quasi_ident, hierarchies):
     """Get the generalization levels of the training set to apply the same to the test set."""
 
