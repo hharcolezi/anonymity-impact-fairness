@@ -309,11 +309,8 @@ def get_hierarchies(data, dataset):
                 "FER" : dict(pd.read_csv("hierarchies/ACSIncome/FER.csv", header=None)),
                 "RAC1P": dict(pd.read_csv("hierarchies/ACSIncome/RAC1P.csv", header=None)),
                 "PINCP": dict(pd.read_csv("hierarchies/ACSIncome/PINCP.csv", header=None)),
-                #"RELP": {0: data["RELP"].unique(),
-                #                1: np.array(["*"] * len(data["RELP"].unique()))},
-                "SEX": {1.0: data["SEX"].unique(),
-                        2.0: np.array(["*"] * len(data["SEX"].unique()))}  
-            
+                "SEX": {0: data["SEX"].unique(),
+                        1: np.array(["*"] * len(data["SEX"].unique()))}  
                 }
 
 def get_generalization_levels(train_data_anon, quasi_ident, hierarchies):
