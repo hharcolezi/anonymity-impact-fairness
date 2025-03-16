@@ -39,7 +39,7 @@ Do fairness results observed using XGBoost generalize across other ML classifier
 
 ### Summarized Results
 Consolidated findings from the above experiments are presented in:  
-- [2_Results_Anon_Imp_Fairness.py](2_Results_Anon_Imp_Fairness.py)
+- [2_Results_Anon_Imp_Fairness.py](2_Results_Anon_Imp_Fairness.ipynb)
 
 ## Repository Structure
 
@@ -61,7 +61,7 @@ Consolidated findings from the above experiments are presented in:
 
 ├── 1_Exp_Classifiers.py                 # RQ5: Generalizability experiments
 
-├── 2_Results_Anon_Imp_Fairness.py       # Consolidated results and analysis
+├── 2_Results_Anon_Imp_Fairness.ipynb       # Consolidated results and analysis
 
 ├── config_experiments.py                   # Configuration for experiments
 
