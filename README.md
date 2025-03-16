@@ -39,7 +39,7 @@ Do fairness results observed using XGBoost generalize across other ML classifier
 
 ### Summarized Results
 Consolidated findings from the above experiments are presented in:  
-- [2_Results_Anon_Imp_Fairness.py](2_Results_Anon_Imp_Fairness.ipynb)
+- [2_Results_Anon_Imp_Fairness.ipynb](2_Results_Anon_Imp_Fairness.ipynb)
 
 ## Repository Structure
 
@@ -74,4 +74,6 @@ Consolidated findings from the above experiments are presented in:
 └── README.md                               # Project description and instructions
 
 ## Acknowledgments
-This repository leverages datasets obtained via the [Folktables](https://github.com/socialfoundations/folktables) Python library. Anonymization methods were implemented via the [Anjana](https://github.com/IFCA-Advanced-Computing/anjana) Python library.
+This repository leverages datasets obtained via the [Folktables](https://github.com/socialfoundations/folktables) Python library. 
+
+Anonymization methods were implemented via the [Anjana](https://github.com/IFCA-Advanced-Computing/anjana) Python library.
