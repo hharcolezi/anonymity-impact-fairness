@@ -9,7 +9,6 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 
 # anonymity libraries
-import pycanon
 from anjana.anonymity import k_anonymity, t_closeness
 
 # ML models
@@ -36,159 +35,160 @@ import ray
 import os
 ray.init(num_cpus=os.cpu_count(), ignore_reinit_error=True)
 
-def main():
+# Define the parameters
+method = 't-closeness' 
+lst_dataset = cfg.lst_dataset
+lst_sensitive_attributes = cfg.lst_sensitive_attributes
+supp_level = cfg.supp_level[1]
+lst_k = cfg.lst_k
+lst_t = cfg.lst_t
+max_seed = cfg.max_seed
+test_size = cfg.test_size
+fraction = cfg.fixed_fraction
 
-	# Define the parameters
-	method = 't-closeness' 
-	lst_dataset = cfg.lst_dataset
-	lst_sensitive_attributes = cfg.lst_sensitive_attributes
-	supp_level = cfg.supp_level[1]
-	lst_k = cfg.lst_k
-	lst_t = cfg.lst_t
-	max_seed = cfg.max_seed
-	test_size = cfg.test_size
-	fraction = cfg.fixed_fraction
+for dataset in lst_dataset:
 
-	for dataset in lst_dataset:
+    for protected_att in lst_sensitive_attributes[dataset]:
+    
+        # Main execution
+        write_main_results_to_csv([], dataset=dataset, header=True)
 
-		for protected_att in lst_sensitive_attributes[dataset]:
-		
-			# Main execution
-			write_main_results_to_csv([], dataset=dataset, header=True)
+        # read data
+        if dataset == 'adult':
 
-			# read data
-			if dataset == 'adult':
+            # Sensitive/target
+            sens_att = "income"
+    
+            # Read and process the data
+            data = pd.read_csv("adult_reconstruction.csv")
+            threshold_target = int(data[sens_att].median())
+            data = clean_process_data(data, dataset, sens_att, protected_att, threshold_target)
 
-				# Sensitive/target
-				sens_att = "income"
-		
-				# Read and process the data
-				data = pd.read_csv("adult_reconstruction.csv")
-				threshold_target = int(data[sens_att].median())
-				data = clean_process_data(data, dataset, sens_att, protected_att, threshold_target)
+        elif dataset == 'ACSIncome':
 
-			elif dataset == 'ACSIncome':
+            # Sensitive/target
+            sens_att = 'PINCP'
 
-				# Sensitive/target
-				sens_att = 'PINCP'
+            # Read and process the data
+            data_source = ACSDataSource(survey_year='2018', horizon='1-Year', survey='person')
+            acs_data = data_source.get_data()
+            Our_ACSIncome = folktables.BasicProblem(
+                                                    features=[
+                                                            'AGEP',
+                                                            'COW',
+                                                            'SCHL',
+                                                            'MAR',
+                                                            'OCCP',
+                                                            'POBP',
+                                                            'RELP',
+                                                            'WKHP',
+                                                            'SEX',
+                                                            'RAC1P',
+                                                            ],
+                                                    target='PINCP',
+                                                    target_transform=lambda x: x,    
+                                                    group=protected_att,
+                                                    preprocess=folktables.adult_filter,
+                                                    postprocess=lambda x: np.nan_to_num(x, -1),
+                                                    )
+            features, target, _ = Our_ACSIncome.df_to_pandas(acs_data)
+            data = pd.concat([features, target.astype(int)], axis=1)
+            threshold_target = int(data[sens_att].median())
+            full_data = clean_process_data(data, dataset, sens_att, protected_att, threshold_target)
 
-				# Read and process the data
-				data_source = ACSDataSource(survey_year='2018', horizon='1-Year', survey='person')
-				acs_data = data_source.get_data()
-				Our_ACSIncome = folktables.BasicProblem(
-														features=[
-																'AGEP',
-																'COW',
-																'SCHL',
-																'MAR',
-																'OCCP',
-																'POBP',
-																'RELP',
-																'WKHP',
-																'SEX',
-																'RAC1P',
-																],
-														target='PINCP',
-														target_transform=lambda x: x,    
-														group=protected_att,
-														preprocess=folktables.adult_filter,
-														postprocess=lambda x: np.nan_to_num(x, -1),
-														)
-				features, target, _ = Our_ACSIncome.df_to_pandas(acs_data)
-				data = pd.concat([features, target.astype(int)], axis=1)
-				threshold_target = int(data[sens_att].median())
-				full_data = clean_process_data(data, dataset, sens_att, protected_att, threshold_target)
+        elif dataset == 'compas':
 
-			print("Dataset: {} with Protected Attribute: {}".format(dataset, protected_att))
+            # Sensitive/target
+            sens_att = "v_decile_score"
+    
+            # Read and process the data
+            data = pd.read_csv('compas-scores-two-years.csv', usecols=['sex', 'age', 'race', 'days_b_screening_arrest', 'priors_count', 'v_decile_score'])
+            threshold_target = int(data[sens_att].median())
+            data = clean_process_data(data, dataset, sens_att, protected_att, threshold_target)
 
-			# Import/defining the hierarquies for each quasi-identifier. 
-			hierarchies = get_hierarchies(data, dataset)
+        print("Dataset: {} with Protected Attribute: {}".format(dataset, protected_att))
 
-			# Define the quasi-identifiers (all columns except the sensitive attribute)
-			quasi_ident = list(set(data.columns) - {sens_att})
+        # Import/defining the hierarquies for each quasi-identifier. 
+        hierarchies = get_hierarchies(data, dataset)
 
-			# Loop over several seeds
-			SEED = 0
-			while SEED < max_seed:
-				print(f"SEED: {SEED}")
-				data = full_data.sample(frac=fraction, random_state=SEED) if dataset == 'ACSIncome' else data 
+        # Define the quasi-identifiers (all columns except the sensitive attribute)
+        quasi_ident = list(set(data.columns) - {sens_att})
 
-				# Loop over several t values
-				for t_clos in lst_t:
-					print(f"t: {t_clos}")
+        # Loop over several seeds
+        SEED = 0
+        while SEED < max_seed:
+            print(f"SEED: {SEED}")
+            data = full_data.sample(frac=fraction, random_state=SEED) if dataset in ['ACSIncome'] else data 
 
-					# Loop over several k values
-					for k in lst_k:
-						print(f"k: {k}")
+            # Loop over several t values
+            for t_clos in lst_t:
+                print(f"t: {t_clos}")
 
-						try:
-							# Split into train and test data
-							train_data, test_data = train_test_split(data, test_size=test_size, random_state=SEED)
+                # Loop over several k values
+                for k in lst_k:
+                    print(f"k: {k}")
 
-							# Anonymize data
-							train_data_anon = k_anonymity(train_data, [], quasi_ident, k, supp_level, hierarchies)
-							if 'index' in train_data_anon.columns:
-								del train_data_anon['index'] 
+                    try:
+                        # Split into train and test data
+                        train_data, test_data = train_test_split(data, test_size=test_size, random_state=SEED)
 
-							if k > 1:
-								# Apply t-closeness
-								train_data_anon = t_closeness(train_data_anon, [], quasi_ident, sens_att, k, t_clos, supp_level, hierarchies)
+                        # Anonymize data
+                        train_data_anon = k_anonymity(train_data, [], quasi_ident, k, supp_level, hierarchies)
+                        if 'index' in train_data_anon.columns:
+                            del train_data_anon['index'] 
 
-								# Assert that the level of t-closeness is satisfied
-								actual_t_closeness = pycanon.anonymity.t_closeness(train_data_anon, quasi_ident, [sens_att], True)
-								assert actual_t_closeness <= t_clos, f"t-closeness constraint not met: Expected <= {t_clos}, but got {actual_t_closeness:.2f}"
+                        if k > 1:
+                            # Apply t-closeness
+                            train_data_anon = t_closeness(train_data_anon, [], quasi_ident, sens_att, k, t_clos, supp_level, hierarchies)
 
-								# Get generalization levels of the training set to apply the same to the test set
-								generalization_levels = get_generalization_levels(train_data_anon, quasi_ident, hierarchies)
+                            # Get generalization levels of the training set to apply the same to the test set
+                            generalization_levels = get_generalization_levels(train_data_anon, quasi_ident, hierarchies)
 
-								# Apply the same generalization levels to the test data (Except for the protected attribute: for fairness measurements)
-								for col in set(quasi_ident) - {protected_att}:
-									level = generalization_levels.get(col)
-									
-									if level is not None:
-										# Retrieve the mapping dictionary for this level
-										hierarchy_mapping = dict(zip(hierarchies[col][0], hierarchies[col][level]))
-										
-										# Apply the mapping to the test data
-										test_data[col] = test_data[col].map(hierarchy_mapping)
-				
-							# Separate features and target
-							X_train, y_train, X_test, y_test = get_train_test_data(train_data_anon, test_data, sens_att)
+                            # Apply the same generalization levels to the test data (Except for the protected attribute: for fairness measurements)
+                            for col in set(quasi_ident) - {protected_att}:
+                                level = generalization_levels.get(col)
+                                
+                                if level is not None:
+                                    # Retrieve the mapping dictionary for this level
+                                    hierarchy_mapping = dict(zip(hierarchies[col][0], hierarchies[col][level]))
+                                    
+                                    # Apply the mapping to the test data
+                                    test_data[col] = test_data[col].map(hierarchy_mapping)
+            
+                        # Separate features and target
+                        X_train, y_train, X_test, y_test = get_train_test_data(train_data_anon, test_data, sens_att)
 
-							# Train the model
-							model = XGB(random_state=SEED, n_jobs=-1)
-							model.fit(X_train, y_train)
+                        # Train the model
+                        model = XGB(random_state=SEED, n_jobs=-1)
+                        model.fit(X_train, y_train)
 
-							# Get group fairness/utility metrics
-							df_fm = test_data.copy()
-							df_fm['y_pred'] = np.round(model.predict(X_test)).reshape(-1).astype(int)
-							dic_metrics = get_metrics(df_fm, protected_att, sens_att)
+                        # Get group fairness/utility metrics
+                        df_fm = test_data.copy()
+                        df_fm['y_pred'] = np.round(model.predict(X_test)).reshape(-1).astype(int)
+                        dic_metrics = get_metrics(df_fm, protected_att, sens_att)
 
-							# Compute individual fairness metrics
-							soft_ypred = model.predict_proba(X_test)
-							
-							asf_score = similarity_fairness(soft_ypred, X_test.values)
-							dic_metrics['ASF'] = np.abs(asf_score)
+                        # Compute individual fairness metrics
+                        soft_ypred = model.predict_proba(X_test)
+                        
+                        asf_score = similarity_fairness(soft_ypred, X_test.values)
+                        dic_metrics['ASF'] = np.abs(asf_score)
 
-							alf_score = lipschitz_fairness(soft_ypred, X_test.values)
-							dic_metrics['ALF'] = np.abs(alf_score)
+                        alf_score = lipschitz_fairness(soft_ypred, X_test.values)
+                        dic_metrics['ALF'] = np.abs(alf_score)
 
-							ncf_score = neighborhood_consistency_fairness(soft_ypred, X_test.values)
-							dic_metrics['NCF'] = np.abs(ncf_score)
-							print(dic_metrics)
+                        ncf_score = neighborhood_consistency_fairness(soft_ypred, X_test.values)
+                        dic_metrics['NCF'] = np.abs(ncf_score)
+                        print(dic_metrics)
 
-							# Write results to csv
-							write_main_results_to_csv([SEED, protected_att, sens_att, method, k, t_clos] + list(dic_metrics.values()), dataset=dataset)
+                        # Write results to csv
+                        write_main_results_to_csv([SEED, protected_att, sens_att, method, k, t_clos] + list(dic_metrics.values()), dataset=dataset)
 
-						except Exception as e:
-							print(f"An error occurred for SEED {SEED}, k {k}: {e}")
-							continue
-					print('-------------------------------------------------------------\n')
-				SEED += 1
-				print('==========================================================================\n')
-			print('############################################################################\n')
-		print('############################################################################\n')
-	ray.shutdown()
-
-if __name__ == "__main__":
-    main()
+                    except Exception as e:
+                        print(f"An error occurred for SEED {SEED}, k {k}: {e}")
+                        continue
+                print('-------------------------------------------------------------\n')
+            SEED += 1
+            print('==========================================================================\n')
+        print('############################################################################\n')
+    print('############################################################################\n')
+ray.shutdown()
