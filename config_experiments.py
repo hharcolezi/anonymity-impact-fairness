@@ -1,9 +1,10 @@
 # config_experiments.py
 
-lst_dataset = ['adult', 'ACSIncome']
+lst_dataset = ['adult', 'ACSIncome', 'compas']
 lst_sensitive_attributes = {
                             'adult': ['gender', 'race'],
                             'ACSIncome': ['SEX', 'RAC1P'],
+                            'compas': ['sex', 'race'],
                         }
 supp_level = [10, 20, 30, 40, 50]
 lst_fraction = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]

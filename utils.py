@@ -207,18 +207,27 @@ def clean_process_data(data, dataset, sens_att, protected_att, threshold_target=
         elif protected_att == 'race':
             data[protected_att] = data[protected_att].apply(lambda x: 1 if x == 'White' else 0)
 
-    elif dataset == 'bank':
+    elif dataset == 'compas':
+        
         data.columns = data.columns.str.strip()
-        cat_cols = [ "job", "marital", "education", "default", "housing",  "loan", "contact", "month", "poutcome"]
+        cat_cols = [ "sex", "race"]
         for col in cat_cols:
             data[col] = data[col].str.strip()
 
+        # Select relevant columns
+        data = data[(data['days_b_screening_arrest'] <= 30) & (data['days_b_screening_arrest'] >= -30)]
+        data = data[(data['race'] == "African-American") | (data['race'] == "Caucasian")] 
+
+        # renaming both groups
+        data.replace('African-American', 'Black', inplace=True)
+        data.replace('Caucasian', 'White', inplace=True)
+
         # Transform protected and target attributes
-        data[sens_att] = data[sens_att].apply(lambda x: int(x=='yes'))
-        if protected_att == 'age':
-            data[protected_att] = data[protected_att].apply(lambda x: 1 if 25 <= x <= 60 else 0)
-        elif protected_att == 'marital':
-            data[protected_att] = data[protected_att].apply(lambda x: 1 if x == 'married' else 0)
+        data[sens_att] = data[sens_att].apply(lambda x: int(x>threshold_target))
+        if protected_att == 'sex':
+            data[protected_att] = data[protected_att].apply(lambda x: 1 if x == 'Male' else 0)
+        elif protected_att == 'race':
+            data[protected_att] = data[protected_att].apply(lambda x: 1 if x == 'White' else 0)
 
         data.reset_index(drop=True, inplace=True)   
 
@@ -235,6 +244,19 @@ def clean_process_data(data, dataset, sens_att, protected_att, threshold_target=
 
         data.reset_index(drop=True, inplace=True)   
 
+    
+    elif dataset == 'ACSPublicCoverage':
+        data.columns = data.columns.str.strip()
+
+        # Transform protected and target attributes
+        data['PINCP'] = data['PINCP'].apply(lambda x: int(x>15000))
+        data[sens_att] = data[sens_att].apply(lambda x: int(x))
+        if protected_att == 'SEX':
+            data[protected_att] = data[protected_att].apply(lambda x: 1 if x == 1 else 0)
+        elif protected_att == 'DIS':
+            data[protected_att] = data[protected_att].apply(lambda x: 1 if x == 1 else 0)
+
+        data.reset_index(drop=True, inplace=True)   
 
     return data
 
@@ -283,8 +305,6 @@ def get_hierarchies(data, dataset):
                 "SEX": {0: data["SEX"].unique(),
                         1: np.array(["*"] * len(data["SEX"].unique()))}  
                 }
-
-
     elif dataset == 'ACSPublicCoverage':
         return {
                 "AGEP": dict(pd.read_csv("hierarchies/ACSIncome/AGEP.csv", header=None)),
@@ -312,6 +332,29 @@ def get_hierarchies(data, dataset):
                 "SEX": {0: data["SEX"].unique(),
                         1: np.array(["*"] * len(data["SEX"].unique()))}  
                 }
+    
+    elif dataset == 'compas':
+        return {
+                "age": dict(pd.read_csv("hierarchies/compas/age.csv", header=None)),
+                "race" : dict(pd.read_csv("hierarchies/compas/race.csv", header=None)),
+                "priors_count": {0: pd.Series(range(int(data["priors_count"].max()) + 1)),  # Get the max value and convert to int
+                        1: generate_intervals(range(int(data["priors_count"].max()) + 1), 0, 39, 5),
+                        2: generate_intervals(range(int(data["priors_count"].max()) + 1), 0, 39, 10),
+                        3: generate_intervals(range(int(data["priors_count"].max()) + 1), 0, 39, 15),
+                        4: np.array(["*"] * (int(data["priors_count"].max()) + 1))  # Convert max value to int
+                        },
+                "days_b_screening_arrest": {
+                        0: pd.Series(range(int(data["days_b_screening_arrest"].min()), 
+                                        int(data["days_b_screening_arrest"].max())), index=range(int(data["days_b_screening_arrest"].min()), 
+                                        int(data["days_b_screening_arrest"].max()))),
+                        1: generate_intervals(range(int(data["days_b_screening_arrest"].min()), int(data["days_b_screening_arrest"].max())), -30, 30, 5),
+                        2: generate_intervals(range(int(data["days_b_screening_arrest"].min()), int(data["days_b_screening_arrest"].max())), -30, 30, 10),
+                        3: generate_intervals(range(int(data["days_b_screening_arrest"].min()), int(data["days_b_screening_arrest"].max())), -30, 30, 15),
+                        4: np.array(["*"] * (int(data["days_b_screening_arrest"].max()) * 2))  
+                    },
+                "sex": {0: data["sex"].unique(),
+                        1: np.array(["*"] * len(data["sex"].unique()))}  
+                }    
 
 def get_generalization_levels(train_data_anon, quasi_ident, hierarchies):
     """Get the generalization levels of the training set to apply the same to the test set."""
@@ -389,11 +432,16 @@ def generate_intervals(
     for num in quasi_ident:
         # Find the right interval
         idx = np.searchsorted(values, num, side="right") - 1
-        lower = values[idx]
-        upper = values[idx + 1]
+        # lower = values[idx]
+        # upper = values[idx + 1]
+        # Fix: Ensure idx is within valid range
+        if idx >= len(values) - 1:
+            lower, upper = values[-1] - step, values[-1]  # Keep last interval valid
+        else:
+            lower, upper = values[idx], values[idx + 1]
         intervals.append(f"[{lower}, {upper})")
 
-    return pd.Series(intervals, index=range(len(quasi_ident)))
+    return pd.Series(intervals, index=range(inf, sup))
 
 @ray.remote
 def compute_lipschitz_fairness(indices, predictions, features, similarity_metric, k=100):
