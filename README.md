@@ -44,20 +44,36 @@ Consolidated findings from the above experiments are presented in:
 ## Repository Structure
 
 ├──Hierachies/                              #Contains hierachies description as csv files per quasi-identifier attribute
+
+
 ├──Results/                                 #Contains results of each experiments as csv files 
+
 ├── 1_K_Anonymity_Impact_Fairness.py        # RQ1: 𝑘-anonymity experiments
+
 ├── 1_L_Diversity_Impact_Fairness.py        # RQ1: ℓ-diversity experiments
+
 ├── 1_T_Closeness_Impact_Fairness.py        # RQ1: 𝑡-closeness experiments
+
 ├── 1_Exp_Suppression.py                    # RQ2: Suppression experiments
+
 ├── 1_Exp_Target_Distribution.py            # RQ3: Target distribution experiments
+
 ├── 1_Exp_Data_Size_Fraction.py             # RQ4: Dataset size experiments
+
 ├── 1_Exp_Classifiers.py                    # RQ5: Generalizability experiments
+
 ├── 2_Results_Anon_Imp_Fairness.ipynb       # Consolidated results and analysis
+
 ├── config_experiments.py                   # Configuration for experiments
+
 ├── utils.py                                # Helper functions for experiments
+
 ├── adult_reconstruction.csv                # Reconsutruced adult dataset with integer target
+
 ├── compas-scores-two-years.csv             # Compas dataset
+
 ├── LICENSE                                 # License information
+
 └── README.md                               # Project description and instructions
 
 ## Acknowledgments
