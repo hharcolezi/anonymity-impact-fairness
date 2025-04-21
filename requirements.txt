@@ -9,3 +9,7 @@ pycanon
 anjana
 folktables
 ray
+matplotlib
+seaborn
+ipykernel
+ipywidgets
