@@ -61,7 +61,7 @@ for dataset in lst_dataset:
             sens_att = "income"
     
             # Read and process the data
-            data = pd.read_csv("adult_reconstruction.csv")
+            data = pd.read_csv("data/adult_reconstruction.csv")
             threshold_target = int(data[sens_att].median())
             data = clean_process_data(data, dataset, sens_att, protected_att, threshold_target)
 
@@ -103,7 +103,7 @@ for dataset in lst_dataset:
             sens_att = "v_decile_score"
     
             # Read and process the data
-            data = pd.read_csv('compas-scores-two-years.csv', usecols=['sex', 'age', 'race', 'days_b_screening_arrest', 'priors_count', 'v_decile_score'])
+            data = pd.read_csv('data/compas-scores-two-years.csv', usecols=['sex', 'age', 'race', 'days_b_screening_arrest', 'priors_count', 'v_decile_score'])
             threshold_target = int(data[sens_att].median())
             data = clean_process_data(data, dataset, sens_att, protected_att, threshold_target)
 
