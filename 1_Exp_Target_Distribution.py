@@ -71,7 +71,7 @@ for decile in lst_deciles:
                     sens_att = "income"
                     
                     # Read and process the data
-                    data = pd.read_csv("adult_reconstruction.csv")
+                    data = pd.read_csv("data/adult_reconstruction.csv")
                     threshold_target = int(np.percentile(data[sens_att], decile))
                     data = clean_process_data(data, dataset, sens_att, protected_att, threshold_target)
 
@@ -113,7 +113,7 @@ for decile in lst_deciles:
                     sens_att = "v_decile_score"
             
                     # Read and process the data
-                    data = pd.read_csv('compas-scores-two-years.csv', usecols=['sex', 'age', 'race', 'days_b_screening_arrest', 'priors_count', 'v_decile_score'])
+                    data = pd.read_csv('data/compas-scores-two-years.csv', usecols=['sex', 'age', 'race', 'days_b_screening_arrest', 'priors_count', 'v_decile_score'])
                     threshold_target = int(decile/10)
                     data = clean_process_data(data, dataset, sens_att, protected_att, threshold_target)
 
@@ -208,8 +208,43 @@ for decile in lst_deciles:
 ray.shutdown()
 
 
+## Run baseline (k=1)
 
-# Run baseline (k=1)
+# warning filters
+import warnings
+warnings.filterwarnings("ignore", message="Pandas requires version")
+warnings.filterwarnings("ignore", message="A NumPy version >=")
+
+# general imports
+import numpy as np
+import pandas as pd
+from sklearn.model_selection import train_test_split
+
+# anonymity library
+from anjana.anonymity import k_anonymity, l_diversity, t_closeness
+
+# ML models
+from xgboost import XGBClassifier as XGB
+
+# our generic functions
+from utils import get_metrics, write_target_distribution_results_to_csv, get_generalization_levels, get_train_test_data
+
+# our data-specific functions
+from utils import clean_process_data, get_hierarchies
+
+# our individual fairness metrics
+from utils import lipschitz_fairness, similarity_fairness, neighborhood_consistency_fairness
+
+# our config file
+import config_experiments as cfg
+
+# import folkatables
+import folktables
+from folktables import ACSDataSource
+
+# ray for parallel processing (individual fairness is computationally expensive)
+import ray 
+import os
 ray.init(num_cpus=os.cpu_count(), ignore_reinit_error=True)
 
 # Get parameters from config file
