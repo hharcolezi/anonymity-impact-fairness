@@ -40,7 +40,7 @@ Consolidated findings from the above experiments are presented in:
 - [2_Results_Anon_Imp_Fairness.ipynb](2_Results_Anon_Imp_Fairness.ipynb)
 
 ## Repository Structure
-
+```
 ├── data/                         	    # Datasets used in the experiments
 │   ├── adult_reconstruction.csv  	    # Reconstructed ACSIncome dataset
 │   └── compas-scores-two-years.csv     # COMPAS dataset
@@ -69,7 +69,7 @@ Consolidated findings from the above experiments are presented in:
 ├── requirements.txt                    # Required Python libraries
 ├── LICENSE                             # License for the repository
 └── README.md                           # Project overview and usage guide
-
+```
 
 ## Acknowledgments
 The ```ACSIncome``` dataset was obtained via the [Folktables](https://github.com/socialfoundations/folktables) Python library. 
