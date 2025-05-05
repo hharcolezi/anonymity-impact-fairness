@@ -10,30 +10,25 @@ Each script answers a specific research question (RQ). Run any experiment with: 
 
 ### RQ1: Impact of Anonymization Techniques on Fairness
 How do different anonymization techniques (𝑘-anonymity, ℓ-diversity, and 𝑡-closeness) and their parameters affect the fairness of ML models?  
-- Experiments:  
-  - [1_K_Anonymity_Impact_Fairness.py](1_K_Anonymity_Impact_Fairness.py)  
-  - [1_L_Diversity_Impact_Fairness.py](1_L_Diversity_Impact_Fairness.py)  
-  - [1_T_Closeness_Impact_Fairness.py](1_T_Closeness_Impact_Fairness.py)  
+- [1_K_Anonymity_Impact_Fairness.py](1_K_Anonymity_Impact_Fairness.py)  
+- [1_L_Diversity_Impact_Fairness.py](1_L_Diversity_Impact_Fairness.py)  
+- [1_T_Closeness_Impact_Fairness.py](1_T_Closeness_Impact_Fairness.py)  
 
 ### RQ2: Effect of Suppression on Fairness
 How does varying the record-level suppression threshold during anonymization impact fairness, particularly for sub-populations?  
-- Experiment:  
-  - [1_Exp_Suppression.py](1_Exp_Suppression.py)  
+- [1_Exp_Suppression.py](1_Exp_Suppression.py)  
 
 ### RQ3: Influence of Target Distribution
 What is the impact of altering the target distribution on fairness metrics, specifically by varying the threshold for binarizing the income variable?  
-- Experiment:  
-  - [1_Exp_Target_Distribution.py](1_Exp_Target_Distribution.py)  
+- [1_Exp_Target_Distribution.py](1_Exp_Target_Distribution.py)  
 
 ### RQ4: Role of Dataset Size
 How does dataset size mediate the trade-offs between privacy, fairness, and utility?  
-- Experiment:  
-  - [1_Exp_Data_Size_Fraction.py](1_Exp_Data_Size_Fraction.py)  
+- [1_Exp_Data_Size_Fraction.py](1_Exp_Data_Size_Fraction.py)  
 
 ### RQ5: Generalizability Across Classifiers
 Do fairness results observed using XGBoost generalize across other ML classifiers, such as Random Forests and Neural Networks?  
-- Experiment:  
-  - [1_Exp_Classifiers.py](1_Exp_Classifiers.py)  
+- [1_Exp_Classifiers.py](1_Exp_Classifiers.py)  
 
 ### Result Aggregation
 Consolidated findings from the above experiments are presented in:  
