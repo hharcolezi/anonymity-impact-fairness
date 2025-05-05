@@ -6,9 +6,7 @@ This repository contains the implementation of the experiments and methodologies
 To set up the environment and install dependencies: ```pip install -r requirements.txt```
 
 ## Running the Experiments
-To run an experiment, simply use the following command in your terminal: ```python <name_of_experiment_file>.py```
-
-Our experiments are designed to address the following key Research Questions (RQs):
+Each script answers a specific research question (RQ). Run any experiment with: ```python <experiment_file>.py```
 
 ### RQ1: Impact of Anonymization Techniques on Fairness
 How do different anonymization techniques (𝑘-anonymity, ℓ-diversity, and 𝑡-closeness) and their parameters affect the fairness of ML models?  
@@ -37,46 +35,43 @@ Do fairness results observed using XGBoost generalize across other ML classifier
 - Experiment:  
   - [1_Exp_Classifiers.py](1_Exp_Classifiers.py)  
 
-### Summarized Results
+### Result Aggregation
 Consolidated findings from the above experiments are presented in:  
 - [2_Results_Anon_Imp_Fairness.ipynb](2_Results_Anon_Imp_Fairness.ipynb)
 
 ## Repository Structure
 
-├──Hierachies/                              #Contains hierachies description as csv files per quasi-identifier attribute
+├── data/                         	    # Datasets used in the experiments
+│   ├── adult_reconstruction.csv  	    # Reconstructed ACSIncome dataset
+│   └── compas-scores-two-years.csv     # COMPAS dataset
 
+├── hierarchies/                 	    # CSV hierarchies for QI generalization
+│   ├── ACSIncome  	    				
+│   ├── adult					  	    
+│   └── compas						    
 
-├──Results/                                 #Contains results of each experiments as csv files 
+├── results/                     	    # Output CSVs from all experiments
 
-├── 1_K_Anonymity_Impact_Fairness.py        # RQ1: 𝑘-anonymity experiments
+├── 1_K_Anonymity_Impact_Fairness.py    # RQ1: 𝑘-anonymity experiment
+├── 1_L_Diversity_Impact_Fairness.py    # RQ1: ℓ-diversity experiment
+├── 1_T_Closeness_Impact_Fairness.py    # RQ1: 𝑡-closeness experiment
 
-├── 1_L_Diversity_Impact_Fairness.py        # RQ1: ℓ-diversity experiments
+├── 1_Exp_Suppression.py                # RQ2: Suppression threshold impact
+├── 1_Exp_Target_Distribution.py        # RQ3: Effect of target binarization
+├── 1_Exp_Data_Size_Fraction.py         # RQ4: Dataset size variation
+├── 1_Exp_Classifiers.py                # RQ5: Model generalization study
 
-├── 1_T_Closeness_Impact_Fairness.py        # RQ1: 𝑡-closeness experiments
+├── 2_Results_Anon_Imp_Fairness.ipynb   # Notebook with aggregated results
+├── config_experiments.py               # Configuration file for all experiments
+├── utils.py                            # Utility functions
+├── hierarchy_gen_ACSIncome.py          # Generates hierarchies for ACSIncome
 
-├── 1_Exp_Suppression.py                    # RQ2: Suppression experiments
+├── requirements.txt                    # Required Python libraries
+├── LICENSE                             # License for the repository
+└── README.md                           # Project overview and usage guide
 
-├── 1_Exp_Target_Distribution.py            # RQ3: Target distribution experiments
-
-├── 1_Exp_Data_Size_Fraction.py             # RQ4: Dataset size experiments
-
-├── 1_Exp_Classifiers.py                    # RQ5: Generalizability experiments
-
-├── 2_Results_Anon_Imp_Fairness.ipynb       # Consolidated results and analysis
-
-├── config_experiments.py                   # Configuration for experiments
-
-├── utils.py                                # Helper functions for experiments
-
-├── adult_reconstruction.csv                # Reconsutruced adult dataset with integer target
-
-├── compas-scores-two-years.csv             # Compas dataset
-
-├── LICENSE                                 # License information
-
-└── README.md                               # Project description and instructions
 
 ## Acknowledgments
-This repository leverages datasets obtained via the [Folktables](https://github.com/socialfoundations/folktables) Python library. 
+The ```ACSIncome``` dataset was obtained via the [Folktables](https://github.com/socialfoundations/folktables) Python library. 
 
 Anonymization methods were implemented via the [Anjana](https://github.com/IFCA-Advanced-Computing/anjana) Python library.
