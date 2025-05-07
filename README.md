@@ -1,6 +1,6 @@
 # Fairness Evaluation Under Anonymization Techniques
 
-This repository contains the implementation of the experiments and methodologies presented in the paper **"Fair Play for Individuals, Foul Play for Groups? Auditing Anonymization’s Impact on ML Fairness"**. The key contributions of this paper is a systematical investigation of the interplay between anonymization techniques and fairness in machine learning (ML) models. Through various case studies, we address several critical research questions about the effects of anonymization, record suppression, dataset characteristics, and classifier choices on fairness metrics. 
+This repository accompanies the paper: **"Fair Play for Individuals, Foul Play for Groups? Auditing Anonymization’s Impact on ML Fairness"**. The key contributions of this paper is a systematical investigation of the interplay between anonymization techniques and fairness in machine learning (ML). Through various case studies, we address several critical research questions about the effects of anonymization, record suppression, dataset characteristics, and classifier choices on fairness metrics. 
 
 ## Install Dependencies
 To set up the environment and install dependencies: ```pip install -r requirements.txt```
@@ -39,34 +39,36 @@ Consolidated findings from the above experiments are presented in:
 ├── data/                         	    # Datasets used in the experiments
 │   ├── adult_reconstruction.csv  	    # Reconstructed ACSIncome dataset
 │   └── compas-scores-two-years.csv     # COMPAS dataset
-
 ├── hierarchies/                 	    # CSV hierarchies for QI generalization
 │   ├── ACSIncome  	    				
 │   ├── adult					  	    
 │   └── compas						    
-
 ├── results/                     	    # Output CSVs from all experiments
-
 ├── 1_K_Anonymity_Impact_Fairness.py    # RQ1: 𝑘-anonymity experiment
 ├── 1_L_Diversity_Impact_Fairness.py    # RQ1: ℓ-diversity experiment
 ├── 1_T_Closeness_Impact_Fairness.py    # RQ1: 𝑡-closeness experiment
-
 ├── 1_Exp_Suppression.py                # RQ2: Suppression threshold impact
 ├── 1_Exp_Target_Distribution.py        # RQ3: Effect of target binarization
 ├── 1_Exp_Data_Size_Fraction.py         # RQ4: Dataset size variation
 ├── 1_Exp_Classifiers.py                # RQ5: Model generalization study
-
 ├── 2_Results_Anon_Imp_Fairness.ipynb   # Notebook with aggregated results
 ├── config_experiments.py               # Configuration file for all experiments
 ├── utils.py                            # Utility functions
 ├── hierarchy_gen_ACSIncome.py          # Generates hierarchies for ACSIncome
-
 ├── requirements.txt                    # Required Python libraries
 ├── LICENSE                             # License for the repository
 └── README.md                           # Project overview and usage guide
 ```
 
+## Contact
+For any question, please contact [Héber H. Arcolezi](https://hharcolezi.github.io/): heber.hwang-arcolezi [at] inria.fr
+
 ## Acknowledgments
-The ```ACSIncome``` dataset was obtained via the [Folktables](https://github.com/socialfoundations/folktables) Python library. 
+Both the ```ACSIncome``` and ```Adult``` datasets were obtained via the [Folktables](https://github.com/socialfoundations/folktables) Python library. 
+
+The ```COMPAS``` dataset was obtained from ProPublica’s investigation into algorithmic bias in criminal justice risk assessments, available at https://github.com/propublica/compas-analysis.
 
 Anonymization methods were implemented via the [Anjana](https://github.com/IFCA-Advanced-Computing/anjana) Python library.
+
+## License
+This repository is licensed under the MIT License. See [LICENSE](https://github.com/hharcolezi/anonymity-impact-fairness/blob/main/LICENSE) for details.
