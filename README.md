@@ -1,6 +1,8 @@
 # Fairness Evaluation Under Anonymization Techniques
 
-This repository accompanies the paper: **"Fair Play for Individuals, Foul Play for Groups? Auditing Anonymization’s Impact on ML Fairness"**. The key contributions of this paper is a systematical investigation of the interplay between anonymization techniques and fairness in machine learning (ML). Through various case studies, we address several critical research questions about the effects of anonymization, record suppression, dataset characteristics, and classifier choices on fairness metrics. 
+This repository accompanies the paper: [**"Fair Play for Individuals, Foul Play for Groups? Auditing Anonymization’s Impact on ML Fairness"**](https://arxiv.org/abs/2505.07985). 
+
+The key contributions of this paper is a systematical investigation of the interplay between anonymization techniques and fairness in machine learning (ML). Through various case studies, we address several critical research questions about the effects of anonymization, record suppression, dataset characteristics, and classifier choices on fairness metrics. 
 
 ## Install Dependencies
 To set up the environment and install dependencies: ```pip install -r requirements.txt```
@@ -62,6 +64,17 @@ Consolidated findings from the above experiments are presented in:
 
 ## Contact
 For any question, please contact [Héber H. Arcolezi](https://hharcolezi.github.io/): heber.hwang-arcolezi [at] inria.fr
+
+## Citation
+If you find this code useful, please consider citing our paper:
+```
+@article{arcolezi2025,
+  title={Fair Play for Individuals, Foul Play for Groups? Auditing Anonymization’s Impact on ML Fairness},
+  author={H\'eber H. Arcolezi and Mina Alishahi and Adda-Akram Bendoukha and Nesrine Kaaniche},
+  journal={arXiv preprint arXiv:2505.07985},
+  year={2025}
+}
+```
 
 ## Acknowledgments
 Both the ```ACSIncome``` and ```Adult``` datasets were obtained via the [Folktables](https://github.com/socialfoundations/folktables) Python library. 
