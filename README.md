@@ -39,11 +39,11 @@ Consolidated findings from the above experiments are presented in:
 ├── data/                         	    # Datasets used in the experiments
 │   ├── adult_reconstruction.csv  	    # Reconstructed ACSIncome dataset
 │   └── compas-scores-two-years.csv     # COMPAS dataset
-├── hierarchies/                 	    # CSV hierarchies for QI generalization
+├── hierarchies/                 	      # CSV hierarchies for QI generalization
 │   ├── ACSIncome  	    				
 │   ├── adult					  	    
 │   └── compas						    
-├── results/                     	    # Output CSVs from all experiments
+├── results/                     	      # Output CSVs from all experiments
 ├── 1_K_Anonymity_Impact_Fairness.py    # RQ1: 𝑘-anonymity experiment
 ├── 1_L_Diversity_Impact_Fairness.py    # RQ1: ℓ-diversity experiment
 ├── 1_T_Closeness_Impact_Fairness.py    # RQ1: 𝑡-closeness experiment
@@ -61,14 +61,14 @@ Consolidated findings from the above experiments are presented in:
 ```
 
 ## Contact
-For any question, please contact [Héber H. Arcolezi](https://hharcolezi.github.io/): heber.hwang-arcolezi [at] inria.fr
+For any questions, please contact [Héber H. Arcolezi](https://hharcolezi.github.io/): heber.hwang-arcolezi [at] inria.fr
 
 ## Citation
 If you find this code useful, please consider citing our paper:
 ```
-@article{Arcolezi2025,
-  title={Fair Play for Individuals, Foul Play for Groups? Auditing Anonymization’s Impact on ML Fairness},
-  author={H\'eber H. Arcolezi and Mina Alishahi and Adda-Akram Bendoukha and Nesrine Kaaniche},
+@article{arcolezi2025fair,
+  title={Fair Play for Individuals, Foul Play for Groups? Auditing Anonymization's Impact on ML Fairness},
+  author={Arcolezi, H{\'e}ber H and Alishahi, Mina and Bendoukha, Adda-Akram and Kaaniche, Nesrine},
   journal={arXiv preprint arXiv:2505.07985},
   year={2025}
 }
